@@ -30,7 +30,9 @@ export default class Multisig {
     private excuteEvent;
     constructor(blockchain: BlockChain);
     responder(tran: any): void;
-    makeNewMultiSigAddress(friendsPubKeyAes: Array<string>, vote: number, amount: number): {
+    makeNewMultiSigAddress(friendsPubKeyAes: Array<string>, //共有者の情報
+    vote: number, //しきい値
+    amount: number): {
         sender: string;
         recipient: string;
         amount: number;
@@ -39,6 +41,7 @@ export default class Multisig {
         publicKey: string;
         sign: string;
     };
+    private getMultiSigKey;
     makeMultiSigTransaction(multisigAddress: string): {
         sender: string;
         recipient: string;
@@ -48,7 +51,7 @@ export default class Multisig {
         publicKey: string;
         sign: string;
     } | undefined;
-    private getMultiSigKey;
+    private onMultiSigTransaction;
     approveMultiSig(info: multisigInfo): {
         sender: string;
         recipient: string;
@@ -58,6 +61,7 @@ export default class Multisig {
         publicKey: string;
         sign: string;
     } | undefined;
+    private onApproveMultiSig;
     verifyMultiSig(info: multisigInfo, shares: Array<any>): {
         sender: string;
         recipient: string;
@@ -66,6 +70,6 @@ export default class Multisig {
         now: number;
         publicKey: string;
         sign: string;
-    };
+    } | undefined;
 }
 export {};
