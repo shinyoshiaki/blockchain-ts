@@ -144,24 +144,17 @@ export default class Multisig {
       encryptSecKey,
       threshold: vote
     };
-    const tran = this.b.newTransaction(
-      this.b.address,
-      address,
-      amount,
-      {
-        type: type.MULTISIG,
-        opt: type.MAKE,
-        shares,
-        info
-      },
-      cypher
-    );
-    this.b.addTransaction(tran);
+    const tran = this.b.newTransaction(this.b.address, address, amount, {
+      type: type.MULTISIG,
+      opt: type.MAKE,
+      shares,
+      info
+    });
     console.log("makeNewMultiSigAddress done", { tran });
     return tran;
   }
 
-  makeMultiSigTransaction(multisigAddress: string, amount: number) {
+  makeMultiSigTransaction(multisigAddress: string) {
     console.log("makeMultiSigTransaction start");
     const data = this.multiSig[multisigAddress];
     if (!data) return;
@@ -180,13 +173,14 @@ export default class Multisig {
       threshold: data.threshold
     };
     data.isOwner = true;
+    const amount = this.b.nowAmount(multisigAddress);
+    console.log("multisig tran", { amount });
     const tran = this.b.newTransaction(this.b.address, multisigAddress, 0, {
       type: type.MULTISIG,
       opt: type.TRAN,
       amount,
       info
     });
-    this.b.addTransaction(tran);
     console.log("makeMultiSigTransaction done", { tran });
     return tran;
   }
@@ -236,7 +230,6 @@ export default class Multisig {
             info: info
           }
         );
-        this.b.addTransaction(tran);
         console.log("approveMultiSig done", { tran });
         return tran;
       }
@@ -260,7 +253,6 @@ export default class Multisig {
       { comment: "verifyMultiSig" },
       cypher
     );
-    this.b.addTransaction(tran);
     console.log("verifyMultiSig done", { tran });
     return tran;
   }

@@ -2,12 +2,15 @@ require("babel-polyfill");
 import BlockChain from "./blockchain";
 import sha1 from "sha1";
 import Multisig from "./multisig";
+import Responder from "./responder";
 
 export default class BlockChainApp extends BlockChain {
   multisig: Multisig;
+  responder: Responder;
   constructor(secKey?: string, pubKey?: string) {
     super(secKey, pubKey);
     this.multisig = new Multisig(this);
+    this.responder = new Responder(this);
   }
 
   mine() {
@@ -19,9 +22,8 @@ export default class BlockChainApp extends BlockChain {
       const previousHash = this.hash(this.lastBlock());
       //新しいブロック
       const block = this.newBlock(proof, previousHash);
-      console.log("new block forged", JSON.stringify(block));
-      //ネットワークにブロードキャスト
-      this.saveChain();
+      console.log("new block forged", { block });
+      // this.saveChain();
       //完了
       resolve(block);
     });

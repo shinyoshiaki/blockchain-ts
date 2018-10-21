@@ -1,32 +1,39 @@
 import BlockChain from "./blockchain";
-import type from "./type";
-
-let bc: BlockChain;
-let onResolveConflict: (body: any) => void;
 
 //コールバックは強制、イベントは任意にしようとしている
 interface callback {
   checkConflict: (v?: any) => void;
   onConflict: (chain: any, nodeId: any) => void;
 }
-let callback: callback;
+
+export enum type {
+  NEWBLOCK = "NEWBLOCK",
+  TRANSACRION = "TRANSACRION",
+  CONFLICT = "CONFLICT",
+  RESOLVE_CONFLICT = "RESOLVE_CONFLICT"
+}
 
 export default class Responder {
+  callback?: callback;
+  onResolveConflict?: (chain: Array<any>) => void;
+  bc: BlockChain;
   RPC: any = {};
-  constructor(_bc: BlockChain, _callback: callback) {
-    bc = _bc;
-    callback = _callback;
+  constructor(_bc: BlockChain) {
+    this.bc = _bc;
 
-    this.RPC[type.NEWBLOCK] = async (body: any) => {
+    this.RPC[type.NEWBLOCK] = async (block: any) => {
       console.log("blockchainApp", "new block");
       //受け取ったブロックのインデックスが自分のチェーンより2長いか
       //現時点のチェーンの長さが1ならブロックチェーンの分岐を疑う
-      if (body.index > bc.chain.length + 1 || bc.chain.length === 1) {
+      if (
+        block.index > this.bc.chain.length + 1 ||
+        this.bc.chain.length === 1
+      ) {
         //ブロックチェーンの分岐を調べる
         await this.checkConflicts().catch(console.log);
       } else {
         //新しいブロックを受け入れる
-        bc.addBlock(body);
+        this.bc.addBlock(block);
       }
     };
 
@@ -35,45 +42,50 @@ export default class Responder {
       console.log("blockchainApp transaction", body);
       if (
         //トランザクションプールに受け取ったトランザクションがあるか簡易的に調べる
-        !bc.jsonStr(bc.currentTransactions).includes(bc.jsonStr(body))
+        !this.bc
+          .jsonStr(this.bc.currentTransactions)
+          .includes(this.bc.jsonStr(body))
       ) {
         //トランザクションをトランザクションプールに加える
-        bc.addTransaction(body);
+        this.bc.addTransaction(body);
       }
     };
 
     this.RPC[type.CONFLICT] = (body: any) => {
       console.log("blockchain app check conflict");
       //自分のチェーンが質問者より長ければ、自分のチェーンを返す
-      if (bc.chain.length > body.size) {
+      if (this.bc.chain.length > body.size) {
         console.log("blockchain app check is conflict");
-        callback.onConflict(bc.chain, body.nodeId);
+        if (this.callback) this.callback.onConflict(this.bc.chain, body.nodeId);
       }
     };
 
-    this.RPC[type.RESOLVE_CONFLICT] = (body: any) => {
-      if (onResolveConflict) onResolveConflict(body);
+    this.RPC[type.RESOLVE_CONFLICT] = (chain: Array<any>) => {
+      if (this.onResolveConflict) this.onResolveConflict(chain);
     };
   }
 
-  runRPC(type: string, body: string) {
-    if (Object.keys(this.RPC).includes(type)) this.RPC[type](body);
+  runRPC(name: type, body: any) {
+    if (Object.keys(this.RPC).includes(name)) this.RPC[name](body);
   }
 
   private checkConflicts() {
     return new Promise((resolve, reject) => {
-      console.log("this.checkConflicts");
+      console.log("checkConflicts");
       //タイムアウト
       const timeout = setTimeout(() => {
         reject("checkconflicts timeout");
       }, 4 * 1000);
+
       //他のノードにブロックチェーンの状況を聞く
-      callback.checkConflict();
+      if (this.callback) this.callback.checkConflict();
+
       //他のノードからの回答を調べる
-      onResolveConflict = (body: any) => {
-        if (bc.chain.length < body.length) {
-          if (bc.validChain(body)) {
-            bc.chain = body;
+      this.onResolveConflict = (chain: Array<any>) => {
+        console.log("onResolveConflict");
+        if (this.bc.chain.length < chain.length) {
+          if (this.bc.validChain(chain)) {
+            this.bc.chain = chain;
           } else {
             console.log("conflict wrong chain");
           }

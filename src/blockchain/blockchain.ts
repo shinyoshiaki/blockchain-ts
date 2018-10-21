@@ -58,7 +58,7 @@ export default class BlockChain {
 
     //トランザクションプールをリセット
     this.currentTransactions = [];
-
+    console.log("new block done", this.chain);
     return block;
   }
 
@@ -79,6 +79,7 @@ export default class BlockChain {
       sign: "" //署名
     };
     tran.sign = cypher.encrypt(this.hash(tran));
+    //トランザクションを追加
     this.currentTransactions.push(tran);
 
     return tran;
@@ -90,14 +91,13 @@ export default class BlockChain {
 
   addBlock(block: any) {
     if (this.validBlock(block)) {
-      //console.log("blockchain", "addblock");
+      console.log("validBlock");
       this.currentTransactions = [];
       this.chain.push(block);
 
-      //console.log("chain", this.chain);
+      this.callback.onAddBlock();
+      this.excuteEvent(this.events.onAddBlock);
     }
-    this.callback.onAddBlock();
-    this.excuteEvent(this.events.onAddBlock);
   }
 
   private excuteEvent(ev: any, v?: any) {
@@ -116,16 +116,18 @@ export default class BlockChain {
     const publicKey = block.publicKey;
     block.sign = "";
 
-    //ナンスが正しいかどうか
-    if (this.validProof(lastProof, block.proof, lastHash, owner)) {
-      //署名が正しいかどうか
-      if (this.cypher.decrypt(sign, publicKey) === this.hash(block)) {
-        block.sign = sign;
+    //署名が正しいかどうか
+    if (this.cypher.decrypt(sign, publicKey) === this.hash(block)) {
+      block.sign = sign;
+      //ナンスが正しいかどうか
+      if (this.validProof(lastProof, block.proof, lastHash, owner)) {
         return true;
       } else {
+        console.log("block nonce error", this.address, this.chain);
         return false;
       }
     } else {
+      console.log("block sign error", this.address);
       return false;
     }
   }
@@ -177,7 +179,7 @@ export default class BlockChain {
       return prev.sign === sign;
     });
     if (result) {
-      console.log("duplicate", { transaction }, { result });
+      console.log("duplicate error");
       return false;
     }
 
@@ -197,12 +199,15 @@ export default class BlockChain {
           transaction.sign = sign;
           return true;
         } else {
+          console.log("balance error", amount, balance);
           return false;
         }
       } else {
+        console.log("sign error");
         return false;
       }
     } else {
+      console.log("pubkey error");
       return false;
     }
   }
@@ -215,11 +220,12 @@ export default class BlockChain {
     //   console.log({ tran });
     // }
     if (this.validTransaction(tran)) {
-      console.log("validTransaction");
+      console.log("validTransaction", { tran });
+      //トランザクションを追加
       this.currentTransactions.push(tran);
       this.excuteEvent(this.events.onTransaction);
     } else {
-      console.log("erro Transaction");
+      console.log("error Transaction");
     }
   }
 

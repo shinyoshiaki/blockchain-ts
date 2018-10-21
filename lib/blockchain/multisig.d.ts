@@ -39,7 +39,7 @@ export default class Multisig {
         publicKey: string;
         sign: string;
     };
-    makeMultiSigTransaction(multisigAddress: string, amount: number): {
+    makeMultiSigTransaction(multisigAddress: string): {
         sender: string;
         recipient: string;
         amount: number;
