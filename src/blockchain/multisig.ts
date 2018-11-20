@@ -24,8 +24,6 @@ interface multisigData {
   isOwner?: boolean;
 }
 
-//グローバルに置くと(ここ)staticになるかも
-
 export default class Multisig {
   multiSig: { [key: string]: multisigData } = {};
   address: string;
