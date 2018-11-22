@@ -6,15 +6,7 @@ export default class BlockChainApp extends BlockChain {
     responder: Responder;
     constructor(secKey?: string, pubKey?: string);
     mine(): Promise<{}>;
-    makeTransaction(recipient: string, amount: number, data: any): {
-        sender: string;
-        recipient: string;
-        amount: number;
-        data: any;
-        now: number;
-        publicKey: string;
-        sign: string;
-    } | undefined;
+    makeTransaction(recipient: string, amount: number, data: any): import("./blockchain").ITransaction | undefined;
     getChain(): any[];
     saveChain(): void;
     loadChain(): void;

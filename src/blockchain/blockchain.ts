@@ -2,8 +2,19 @@ import sha256 from "sha256";
 import { Decimal } from "decimal.js";
 import Cypher from "./cypher";
 import type from "./type";
+import { ETransactionType } from "./interface";
 
 const diff = /^0000/;
+
+export interface ITransaction {
+  sender: string;
+  recipient: string;
+  amount: number;
+  data: { type: ETransactionType; payload: any };
+  now: any;
+  publicKey: string;
+  sign: string;
+}
 
 export default class BlockChain {
   chain: Array<any> = [];
@@ -39,7 +50,10 @@ export default class BlockChain {
 
   newBlock(proof: any, previousHash: string) {
     //採掘報酬
-    this.newTransaction(type.SYSTEM, this.address, 1, type.REWARD);
+    this.newTransaction(type.SYSTEM, this.address, 1, {
+      type: ETransactionType.transaction,
+      payload: "reward"
+    });
 
     const block = {
       index: this.chain.length + 1, //ブロックの番号
@@ -66,10 +80,10 @@ export default class BlockChain {
     sender: string,
     recipient: string,
     amount: number,
-    data: any,
+    data: { type: ETransactionType; payload: any },
     cypher = this.cypher
   ) {
-    const tran = {
+    const tran: ITransaction = {
       sender: sender, //送信アドレス
       recipient: recipient, //受取アドレス
       amount: amount, //量

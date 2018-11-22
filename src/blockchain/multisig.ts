@@ -1,5 +1,5 @@
-import BlockChain from "./blockchain";
-import { multisigInfo } from "./interface";
+import BlockChain, { ITransaction } from "./blockchain";
+import { multisigInfo, ETransactionType } from "./interface";
 import sha256 from "sha256";
 import Cypher from "./cypher";
 import crypto from "crypto-browserify";
@@ -24,16 +24,27 @@ interface multisigData {
   isOwner?: boolean;
 }
 
+interface ITranMultisig {
+  opt: type;
+  shares: any;
+  info: any;
+}
+
+interface events {
+  [key: string]: (v?: any) => void;
+}
+
 export default class Multisig {
   multiSig: { [key: string]: multisigData } = {};
   address: string;
   b: BlockChain;
-  private onMultisigTran: { [key: string]: (v?: any) => void } = {};
-  private onMultisigTranDone: { [key: string]: (v?: any) => void } = {};
+  private onMultisigTran: events = {};
+  private onMultisigTranDone: events = {};
   events = {
-    onMultisigTran: this.onMultisigTran
+    onMultisigTran: this.onMultisigTran,
+    onMultisigTranDone: this.onMultisigTranDone
   };
-  private excuteEvent(ev: { [key: string]: (v?: any) => void }, v?: any) {
+  private excuteEvent(ev: events, v?: any) {
     console.log("excuteEvent", ev);
     Object.keys(ev).forEach(key => {
       ev[key](v);
@@ -47,31 +58,33 @@ export default class Multisig {
   }
 
   //通信などにより得られた命令に対する処理
-  responder(tran: any) {
+  responder(tran: ITransaction) {
     this.b.addTransaction(tran);
     const data = tran.data;
-    try {
-      console.log("responder", data.opt);
-      switch (data.opt) {
+
+    console.log("responder", { data });
+    if (data.type === ETransactionType.multisig) {
+      const tranMultisig: ITranMultisig = data.payload;
+      switch (tranMultisig.opt) {
         case type.MAKE:
           {
             //トランザクションからマルチシグの情報を取得
-            this.getMultiSigKey(data.shares, data.info);
+            this.getMultiSigKey(tranMultisig.shares, tranMultisig.info);
           }
           break;
         case type.TRAN:
           {
             //イベントの準備
-            this.onMultiSigTransaction(data.info);
+            this.onMultiSigTransaction(tranMultisig.info);
           }
           break;
         case type.APPROVE:
           {
-            this.onApproveMultiSig(data.info);
+            this.onApproveMultiSig(tranMultisig.info);
           }
           break;
       }
-    } catch (error) {}
+    }
   }
 
   //マルチシグのアドレスを生成
@@ -139,10 +152,8 @@ export default class Multisig {
 
     //トランザクションを生成
     const tran = this.b.newTransaction(this.b.address, address, amount, {
-      type: type.MULTISIG,
-      opt: type.MAKE,
-      shares,
-      info
+      type: ETransactionType.multisig,
+      payload: { opt: type.MAKE, shares, info }
     });
     console.log("makeNewMultiSigAddress done", { tran });
     return tran;
@@ -208,10 +219,12 @@ export default class Multisig {
 
     //トランザクションを生成
     const tran = this.b.newTransaction(this.b.address, multisigAddress, 0, {
-      type: type.MULTISIG,
-      opt: type.TRAN,
-      amount,
-      info
+      type: ETransactionType.multisig,
+      payload: {
+        opt: type.TRAN,
+        amount,
+        info
+      }
     });
     console.log("makeMultiSigTransaction done", { tran });
     return tran;
@@ -246,9 +259,11 @@ export default class Multisig {
           info.multisigAddress,
           0,
           {
-            type: type.MULTISIG,
-            opt: type.APPROVE,
-            info: info
+            type: ETransactionType.multisig,
+            payload: {
+              opt: type.APPROVE,
+              info: info
+            }
           }
         );
         console.log("approveMultiSig done", { tran });
@@ -266,7 +281,7 @@ export default class Multisig {
     ) {
       console.log("type.APPROVE");
       const shares = this.multiSig[info.multisigAddress].shares;
-      
+
       //シェアキーの公開鍵暗号を自身の秘密鍵で解除
       const shareKey = crypto.privateDecrypt(
         this.b.cypher.secKey,
@@ -284,7 +299,6 @@ export default class Multisig {
         console.log("verify multisig", { shares });
         //トランザクションの承認関数
         this.verifyMultiSig(info, shares);
-        this.excuteEvent(this.onMultisigTranDone);
       }
     }
   }
@@ -311,10 +325,11 @@ export default class Multisig {
         address,
         this.b.address,
         amount,
-        { comment: "verifyMultiSig" },
+        { type: ETransactionType.transaction, payload: "verifymultisig" },
         cypher
       );
-      console.log("verifyMultiSig done", { tran });
+      console.log("verifyMultiSig done", this.b.address, { tran });
+      this.excuteEvent(this.onMultisigTranDone);
       return tran;
     }
   }

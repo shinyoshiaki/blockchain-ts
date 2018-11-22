@@ -1,3 +1,4 @@
+import test from "ava";
 import BlockChain from "../../blockchain/blockchainApp";
 import keypair from "keypair";
 import { multisigInfo } from "../../blockchain/interface";
@@ -32,7 +33,14 @@ async function main() {
   bc3.chain = bc1.chain;
 
   //作成役がマルチシグアドレスを生成
-  let tran: any = bc1.multisig.makeNewMultiSigAddress(friends, 2, 1);
+  let tran: any = bc1.multisig.makeNewMultiSigAddress(friends, 3, 1);
+
+  bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {
+    console.log("multisig test done");
+    test("multisig", test => {
+      test.pass();
+    });
+  };
 
   //承認者がマルチシグアドレスのトランザクションをresponderに渡す
   bc2.multisig.responder(tran);
@@ -43,12 +51,14 @@ async function main() {
   tran = bc1.multisig.makeMultiSigTransaction(multisigAddress);
 
   //承認者が承認するためのコールバックを用意
-  bc2.multisig.events.onMultisigTran["test"] = (info: multisigInfo) => {
+  bc2.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {
+    const tran = bc2.multisig.approveMultiSig(info);
     //マルチシグの承認
-    bc1.multisig.responder(bc2.multisig.approveMultiSig(info));
+    if (tran) bc1.multisig.responder(tran);
   };
-  bc3.multisig.events.onMultisigTran["test"] = (info: multisigInfo) => {
-    bc1.multisig.responder(bc3.multisig.approveMultiSig(info));
+  bc3.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {
+    const tran = bc3.multisig.approveMultiSig(info);
+    if (tran) bc1.multisig.responder(tran);
   };
 
   //マルチシグトランザクションをresponderに渡す。

@@ -1,4 +1,17 @@
 import Cypher from "./cypher";
+import { ETransactionType } from "./interface";
+export interface ITransaction {
+    sender: string;
+    recipient: string;
+    amount: number;
+    data: {
+        type: ETransactionType;
+        payload: any;
+    };
+    now: any;
+    publicKey: string;
+    sign: string;
+}
 export default class BlockChain {
     chain: Array<any>;
     currentTransactions: Array<any>;
@@ -30,15 +43,10 @@ export default class BlockChain {
         publicKey: string;
         sign: string;
     };
-    newTransaction(sender: string, recipient: string, amount: number, data: any, cypher?: Cypher): {
-        sender: string;
-        recipient: string;
-        amount: number;
-        data: any;
-        now: number;
-        publicKey: string;
-        sign: string;
-    };
+    newTransaction(sender: string, recipient: string, amount: number, data: {
+        type: ETransactionType;
+        payload: any;
+    }, cypher?: Cypher): ITransaction;
     lastBlock(blockchain?: any[]): any;
     addBlock(block: any): void;
     private excuteEvent;

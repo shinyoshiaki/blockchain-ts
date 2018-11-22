@@ -11,3 +11,9 @@ export interface Network {
     nodeId: string;
     send: (nodeId: string, data: any) => void;
 }
+export declare enum ETransactionType {
+    transaction = 0,
+    multisig = 1,
+    deploy = 2,
+    messagecall = 3
+}
