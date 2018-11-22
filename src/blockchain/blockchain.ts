@@ -193,7 +193,7 @@ export default class BlockChain {
       return prev.sign === sign;
     });
     if (result) {
-      console.log("duplicate error");
+      console.log("duplicate error", { result });
       return false;
     }
 

@@ -52,7 +52,6 @@ export default class Multisig {
   //通信などにより得られた命令に対する処理
   responder(tran: ITransaction) {
     const data = tran.data;
-
     console.log("responder", { data });
     if (data.type === ETransactionType.multisig) {
       const tranMultisig: ITranMultisig = data.payload;

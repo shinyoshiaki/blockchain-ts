@@ -2,6 +2,7 @@ import test from "ava";
 import BlockChain from "../../blockchain/blockchainApp";
 import keypair from "keypair";
 import { multisigInfo } from "../../blockchain/interface";
+import { typeRPC } from "../../blockchain/responder";
 var aes256 = require("aes256");
 
 main();
@@ -32,9 +33,6 @@ async function main() {
   bc2.chain = bc1.chain;
   bc3.chain = bc1.chain;
 
-  //作成役がマルチシグアドレスを生成
-  let tran: any = bc1.multisig.makeNewMultiSigAddress(friends, 3, 1);
-
   bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {
     console.log("multisig test done");
     test("multisig", test => {
@@ -42,26 +40,29 @@ async function main() {
     });
   };
 
+  //承認者が承認するためのコールバックを用意
+  bc2.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {
+    const tran = bc2.multisig.approveMultiSig(info);
+    //マルチシグの承認
+    if (tran) bc1.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+  };
+  bc3.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {
+    const tran = bc3.multisig.approveMultiSig(info);
+    if (tran) bc1.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+  };
+
+  //作成役がマルチシグアドレスを生成
+  let tran: any = bc1.multisig.makeNewMultiSigAddress(friends, 3, 1);
+
   //承認者がマルチシグアドレスのトランザクションをresponderに渡す
-  bc2.multisig.responder(tran);
-  bc3.multisig.responder(tran);
+  bc2.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+  bc3.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
 
   const multisigAddress = Object.keys(bc1.multisig.multiSig)[0];
   //マルチシグトランザクションを作成
   tran = bc1.multisig.makeMultiSigTransaction(multisigAddress);
 
-  //承認者が承認するためのコールバックを用意
-  bc2.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {
-    const tran = bc2.multisig.approveMultiSig(info);
-    //マルチシグの承認
-    if (tran) bc1.multisig.responder(tran);
-  };
-  bc3.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {
-    const tran = bc3.multisig.approveMultiSig(info);
-    if (tran) bc1.multisig.responder(tran);
-  };
-
   //マルチシグトランザクションをresponderに渡す。
-  if (tran) bc2.multisig.responder(tran);
-  if (tran) bc3.multisig.responder(tran);
+  if (tran) bc2.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+  if (tran) bc3.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
 }
