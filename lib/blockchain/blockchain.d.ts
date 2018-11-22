@@ -53,8 +53,8 @@ export default class BlockChain {
     validBlock(block: any): boolean;
     validProof(lastProof: string, proof: number, lastHash: string, address: string): boolean;
     validChain(chain: Array<any>): boolean;
-    validTransaction(transaction: any): boolean;
-    addTransaction(tran: any): void;
+    validTransaction(transaction: ITransaction): boolean;
+    addTransaction(tran: ITransaction): void;
     proofOfWork(): number;
     nowAmount(address?: string): number;
 }

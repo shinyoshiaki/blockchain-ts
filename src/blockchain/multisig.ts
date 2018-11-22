@@ -1,9 +1,11 @@
-import BlockChain, { ITransaction } from "./blockchain";
+import { ITransaction } from "./blockchain";
 import { multisigInfo, ETransactionType } from "./interface";
 import sha256 from "sha256";
 import Cypher from "./cypher";
 import crypto from "crypto-browserify";
 import sha1 from "sha1";
+import BlockChainApp from "./blockchainApp";
+import { IEvents, excuteEvent } from "../util";
 const Buffer = require("buffer/").Buffer;
 var aes256 = require("aes256");
 const sss = require("shamirs-secret-sharing");
@@ -30,28 +32,18 @@ interface ITranMultisig {
   info: any;
 }
 
-interface events {
-  [key: string]: (v?: any) => void;
-}
-
 export default class Multisig {
   multiSig: { [key: string]: multisigData } = {};
   address: string;
-  b: BlockChain;
-  private onMultisigTran: events = {};
-  private onMultisigTranDone: events = {};
+  b: BlockChainApp;
+  private onMultisigTran: IEvents = {};
+  private onMultisigTranDone: IEvents = {};
   events = {
     onMultisigTran: this.onMultisigTran,
     onMultisigTranDone: this.onMultisigTranDone
   };
-  private excuteEvent(ev: events, v?: any) {
-    console.log("excuteEvent", ev);
-    Object.keys(ev).forEach(key => {
-      ev[key](v);
-    });
-  }
 
-  constructor(blockchain: BlockChain) {
+  constructor(blockchain: BlockChainApp) {
     this.b = blockchain;
     console.log("address", this.b.address);
     this.address = this.b.address;
@@ -59,7 +51,6 @@ export default class Multisig {
 
   //通信などにより得られた命令に対する処理
   responder(tran: ITransaction) {
-    this.b.addTransaction(tran);
     const data = tran.data;
 
     console.log("responder", { data });
@@ -105,7 +96,7 @@ export default class Multisig {
     const encryptSecKey: string = aes256.encrypt(aesKey, cypher.secKey);
 
     //シャミアの秘密分散ライブラリでaeskeyをシェア化
-    const shareKeys: Array<any> = sss.split(Buffer.from(aesKey), {
+    const shareKeys: any[] = sss.split(Buffer.from(aesKey), {
       shares: friendsPubKeyAes.length + 1,
       threshold: vote
     });
@@ -234,7 +225,7 @@ export default class Multisig {
   private onMultiSigTransaction(info: multisigInfo) {
     if (Object.keys(this.multiSig).includes(info.multisigAddress)) {
       console.log("onMultisigTran");
-      this.excuteEvent(this.onMultisigTran, info);
+      excuteEvent(this.onMultisigTran, info);
     }
   }
 
@@ -329,7 +320,7 @@ export default class Multisig {
         cypher
       );
       console.log("verifyMultiSig done", this.b.address, { tran });
-      this.excuteEvent(this.onMultisigTranDone);
+      excuteEvent(this.onMultisigTranDone);
       return tran;
     }
   }

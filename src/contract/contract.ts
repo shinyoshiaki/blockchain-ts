@@ -1,5 +1,7 @@
 import sha256 from "sha256";
 import { tokenize } from "esprima";
+import { ITransaction } from "../blockchain/blockchain";
+import { ETransactionType } from "../blockchain/interface";
 
 const word = [
   "reducer",
@@ -64,11 +66,12 @@ export default class Contract {
   address: string;
   code?: any;
   state: any = {};
-  constructor(id: string, nonce: number) {
+  constructor(id: string, nonce: number, code: string) {
     this.address = sha256(id + nonce);
+    this.deploy(code);
   }
 
-  deploy(code: string) {
+  private deploy(code: string) {
     this.code = code;
     if (checkcode(code)) {
       let state = {};
@@ -93,5 +96,12 @@ export default class Contract {
     }
   }
 
-  responder() {}
+  responder(tran: ITransaction) {
+    switch (tran.data.type) {
+      case ETransactionType.deploy:
+        break;
+      case ETransactionType.messagecall:
+        break;
+    }
+  }
 }

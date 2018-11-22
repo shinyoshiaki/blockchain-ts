@@ -1,4 +1,4 @@
-import BlockChain from "./blockchain";
+import BlockChain, { ITransaction } from "./blockchain";
 import Multisig from "./multisig";
 import Responder from "./responder";
 export default class BlockChainApp extends BlockChain {
@@ -6,7 +6,7 @@ export default class BlockChainApp extends BlockChain {
     responder: Responder;
     constructor(secKey?: string, pubKey?: string);
     mine(): Promise<{}>;
-    makeTransaction(recipient: string, amount: number, data: any): import("./blockchain").ITransaction | undefined;
+    makeTransaction(recipient: string, amount: number, data: any): ITransaction | undefined;
     getChain(): any[];
     saveChain(): void;
     loadChain(): void;

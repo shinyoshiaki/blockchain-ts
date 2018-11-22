@@ -1,5 +1,5 @@
 require("babel-polyfill");
-import BlockChain from "./blockchain";
+import BlockChain, { ITransaction } from "./blockchain";
 import sha1 from "sha1";
 import Multisig from "./multisig";
 import Responder from "./responder";
@@ -10,7 +10,11 @@ export default class BlockChainApp extends BlockChain {
   constructor(secKey?: string, pubKey?: string) {
     super(secKey, pubKey);
     this.multisig = new Multisig(this);
+
     this.responder = new Responder(this);
+    this.responder.events.onTransaction["multisig"] = (body: ITransaction) => {
+      this.multisig.responder(body);
+    };
   }
 
   mine() {
@@ -47,6 +51,7 @@ export default class BlockChainApp extends BlockChain {
 
     return tran;
   }
+
 
   getChain() {
     return this.chain;

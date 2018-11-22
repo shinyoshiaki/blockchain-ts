@@ -185,7 +185,7 @@ export default class BlockChain {
     return true;
   }
 
-  validTransaction(transaction: any) {
+  validTransaction(transaction: ITransaction) {
     const amount = transaction.amount;
     const sign = transaction.sign;
 
@@ -226,13 +226,7 @@ export default class BlockChain {
     }
   }
 
-  addTransaction(tran: any) {
-    // try {
-
-    // } catch (error) {
-    //   console.log(error);
-    //   console.log({ tran });
-    // }
+  addTransaction(tran: ITransaction) {
     if (this.validTransaction(tran)) {
       console.log("validTransaction", { tran });
       //トランザクションを追加

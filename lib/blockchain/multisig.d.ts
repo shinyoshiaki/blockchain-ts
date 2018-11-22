@@ -1,5 +1,7 @@
-import BlockChain, { ITransaction } from "./blockchain";
+import { ITransaction } from "./blockchain";
 import { multisigInfo } from "./interface";
+import BlockChainApp from "./blockchainApp";
+import { IEvents } from "../util";
 export declare enum type {
     MAKE = "multisig-make",
     TRAN = "multisig-tran",
@@ -14,23 +16,19 @@ interface multisigData {
     encryptSecKey: string;
     isOwner?: boolean;
 }
-interface events {
-    [key: string]: (v?: any) => void;
-}
 export default class Multisig {
     multiSig: {
         [key: string]: multisigData;
     };
     address: string;
-    b: BlockChain;
+    b: BlockChainApp;
     private onMultisigTran;
     private onMultisigTranDone;
     events: {
-        onMultisigTran: events;
-        onMultisigTranDone: events;
+        onMultisigTran: IEvents;
+        onMultisigTranDone: IEvents;
     };
-    private excuteEvent;
-    constructor(blockchain: BlockChain);
+    constructor(blockchain: BlockChainApp);
     responder(tran: ITransaction): void;
     makeNewMultiSigAddress(friendsPubKeyAes: Array<string>, //共有者の情報
     vote: number, //しきい値
