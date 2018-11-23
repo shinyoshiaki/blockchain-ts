@@ -1,8 +1,6 @@
 import test from "ava";
 import Contract from "../../contract/contract";
 
-const contract = new Contract("test", 0);
-
 const code = `
 const initialState = { val1: 0 };
 
@@ -26,7 +24,8 @@ function reducer(prevState = initialState, action = { type: "", data: "{}" }) {
 }
 `;
 
-contract.deploy(code);
+const contract = new Contract("test", 0, code);
+
 contract.messageCall("add", { val2: "4" });
 contract.messageCall("add", { val2: "4" });
 contract.messageCall("increment");

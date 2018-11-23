@@ -60,7 +60,8 @@ export default class Responder {
       ) {
         //トランザクションをトランザクションプールに加える
         this.bc.addTransaction(body);
-        excuteEvent(this.onTransaction, body);
+        this.bc.multisig.responder(body)
+        // excuteEvent(this.onTransaction, body);
       }
     };
 

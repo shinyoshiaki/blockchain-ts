@@ -12,9 +12,6 @@ export default class BlockChainApp extends BlockChain {
     this.multisig = new Multisig(this);
 
     this.responder = new Responder(this);
-    this.responder.events.onTransaction["multisig"] = (body: ITransaction) => {
-      this.multisig.responder(body);
-    };
   }
 
   mine() {
@@ -51,7 +48,6 @@ export default class BlockChainApp extends BlockChain {
 
     return tran;
   }
-
 
   getChain() {
     return this.chain;
