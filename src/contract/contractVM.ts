@@ -74,8 +74,7 @@ export default class ContractVM {
         data
       )}})`;
       const code = this.code + func;
-      if (checkcode(code)) {
-        console.log({ code });
+      if (checkcode(code)) {        
         eval(code);
         console.log("msgcall", { state });
         this.state = state;

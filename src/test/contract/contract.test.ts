@@ -17,8 +17,7 @@ function reducer(prevState = initialState, action = { type: "", data: {} }) {
       break;
     default:
       state = prevState;
-  }
-  console.log("contract", { state });
+  }  
 }
 `;
 

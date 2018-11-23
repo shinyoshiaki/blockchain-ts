@@ -38,6 +38,6 @@ export default class Multisig {
     private onMultiSigTransaction;
     approveMultiSig(info: multisigInfo): ITransaction | undefined;
     private onApproveMultiSig;
-    verifyMultiSig(info: multisigInfo, shares: Array<any>): ITransaction | undefined;
+    private verifyMultiSig;
 }
 export {};

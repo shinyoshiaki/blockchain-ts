@@ -294,7 +294,7 @@ export default class Multisig {
   }
 
   //トランザクションの承認
-  verifyMultiSig(info: multisigInfo, shares: Array<any>) {
+  private verifyMultiSig(info: multisigInfo, shares: Array<any>) {
     console.log("verifyMultiSig start", { shares });
     //シャミアのシェアキーからシークレットを復号化
     const recovered = sss.combine(shares).toString();

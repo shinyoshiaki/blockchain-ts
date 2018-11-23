@@ -1,6 +1,6 @@
 import BlockChain, { ITransaction } from "./blockchain";
 import Multisig from "./multisig";
-import Responder from "./responder";
+import Responder, { RPC } from "./responder";
 import Contract from "../contract/contract";
 export default class BlockChainApp extends BlockChain {
     multisig: Multisig;
@@ -9,7 +9,5 @@ export default class BlockChainApp extends BlockChain {
     constructor(secKey?: string, pubKey?: string);
     mine(): Promise<{}>;
     makeTransaction(recipient: string, amount: number, data: any): ITransaction | undefined;
-    getChain(): any[];
-    saveChain(): void;
-    loadChain(): void;
+    transactionRPC(tran: ITransaction): RPC;
 }

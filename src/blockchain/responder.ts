@@ -8,7 +8,7 @@ interface callback {
   onConflict: (chain: any, nodeId: any) => void;
 }
 
-interface RPC {
+export interface RPC {
   type: typeRPC;
   body: any;
 }

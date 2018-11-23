@@ -24,15 +24,6 @@ async function main() {
   //承認者２
   const bc3 = new BlockChain(cypher2.private, cypher2.public);
 
-  console.log(
-    cypher.private,
-    cypher.public,
-    cypher2.private,
-    cypher2.public,
-    bc1.cypher.secKey,
-    bc1.cypher.pubKey
-  );
-
   //作成役がマイニングしてトークンを稼ぐ
   const block = await bc1.mine();
   console.log({ block });
