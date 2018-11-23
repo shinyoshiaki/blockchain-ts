@@ -1,15 +1,17 @@
 import Cypher from "./cypher";
 import { ETransactionType } from "./interface";
+export interface ITransactionData {
+    type: ETransactionType;
+    payload: any;
+}
 export interface ITransaction {
     sender: string;
     recipient: string;
     amount: number;
-    data: {
-        type: ETransactionType;
-        payload: any;
-    };
+    data: ITransactionData;
     now: any;
     publicKey: string;
+    nonce: number;
     sign: string;
 }
 export default class BlockChain {
@@ -57,4 +59,5 @@ export default class BlockChain {
     addTransaction(tran: ITransaction): void;
     proofOfWork(): number;
     nowAmount(address?: string): number;
+    getNonce(address?: string): number;
 }

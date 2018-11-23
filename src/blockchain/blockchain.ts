@@ -4,15 +4,21 @@ import Cypher from "./cypher";
 import type from "./type";
 import { ETransactionType } from "./interface";
 
-const diff = /^0000/;
+const diff = /^000/;
+
+export interface ITransactionData {
+  type: ETransactionType;
+  payload: any;
+}
 
 export interface ITransaction {
   sender: string;
   recipient: string;
   amount: number;
-  data: { type: ETransactionType; payload: any };
+  data: ITransactionData;
   now: any;
   publicKey: string;
+  nonce: number;
   sign: string;
 }
 
@@ -89,7 +95,8 @@ export default class BlockChain {
       amount: amount, //量
       data: data, //任意のメッセージ
       now: Date.now(), //タイムスタンプ
-      publicKey: cypher.pubKey, //公開鍵
+      publicKey: cypher.pubKey, //公開鍵,
+      nonce: this.getNonce(),
       sign: "" //署名
     };
     tran.sign = cypher.encrypt(this.hash(tran));
@@ -275,5 +282,22 @@ export default class BlockChain {
       }
     });
     return tokenNum.toNumber();
+  }
+
+  getNonce(address = this.address) {
+    let nonce = 0;
+    this.chain.forEach(block => {
+      block.transactions.forEach((transaction: ITransaction) => {
+        if (transaction.sender === address) {
+          nonce++;
+        }
+      });
+    });
+    this.currentTransactions.forEach(transaction => {
+      if (transaction.recipient === address) {
+        nonce++;
+      }
+    });
+    return nonce;
   }
 }

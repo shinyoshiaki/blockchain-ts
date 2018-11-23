@@ -1,57 +1,8 @@
-import sha256 from "sha256";
-import { tokenize } from "esprima";
-import { ITransaction } from "../blockchain/blockchain";
+import { ITransaction, ITransactionData } from "../blockchain/blockchain";
 import { ETransactionType } from "../blockchain/interface";
-
-const word = [
-  "reducer",
-  "initialState",
-  "prevState",
-  "action",
-  "type",
-  "data",
-  "state"
-];
-const whitelist = ["console", "log", "JSON", "parse", "parseInt"];
-let name: string[] = [];
-for (let i = 0; i < 1000; i++) {
-  name.push("val" + i);
-  name.push("func" + i);
-}
-
-function checkcode(code: string): boolean {
-  const token = tokenize(code);
-
-  const illigals = token
-    .map(item => {
-      if (
-        item.type === "Identifier" &&
-        !word.includes(item.value) &&
-        !whitelist.includes(item.value) &&
-        !name.includes(item.value)
-      )
-        return item.value;
-    })
-    .filter(v => v);
-  if (illigals.length > 0) {
-    console.log({ illigals });
-    return false;
-  }
-
-  const identifiers = token
-    .map(item => {
-      if (item.type === "Identifier") return item.value;
-    })
-    .filter(v => v);
-
-  //@ts-ignore
-  if (!identifiers.includes(...word)) {
-    console.log("not enough");
-    return false;
-  }
-
-  return true;
-}
+import ContractVM from "./contractVM";
+import BlockChainApp from "../blockchain/blockchainApp";
+import sha256 from "sha256";
 
 interface Deploy {
   code: string;
@@ -63,45 +14,44 @@ interface MessageCall {
 }
 
 export default class Contract {
-  address: string;
-  code?: any;
-  state: any = {};
-  constructor(id: string, nonce: number, code: string) {
-    this.address = sha256(id + nonce);
-    this.deploy(code);
+  contracts: { [key: string]: ContractVM } = {};
+  bc: BlockChainApp;
+  constructor(bc: BlockChainApp) {
+    this.bc = bc;
   }
 
-  private deploy(code: string) {
-    this.code = code;
-    if (checkcode(code)) {
-      let state = {};
-      eval(code + `reducer()`);
-      this.state = state;
-    }
+  private deploy(tran: ITransaction) {
+    const payload: Deploy = tran.data.payload;
+    const contract = new ContractVM(tran.recipient, payload.code);
+    this.contracts[contract.address] = contract;
   }
 
-  messageCall(type: string, data = {}) {
-    if (this.code) {
-      let state = this.state;
-      const func = `reducer(state,{type:"${type}",data:${JSON.stringify(
-        data
-      )}})`;
-      const code = this.code + func;
-      if (checkcode(code)) {
-        console.log({ code });
-        eval(code);
-        console.log("msgcall", { state });
-        this.state = state;
-      }
-    }
+  private messageCall(tran: ITransaction) {
+    const payload: MessageCall = tran.data.payload;
+    const contract = this.contracts[tran.recipient];
+    contract.messageCall(payload.type, payload.data);
   }
 
   responder(tran: ITransaction) {
-    switch (tran.data.type) {
-      case ETransactionType.deploy:
-        break;
-      case ETransactionType.messagecall:
-        break;
+    if (tran.data.type === ETransactionType.deploy) {
+      this.deploy(tran);
+    } else if (tran.data.type === ETransactionType.messagecall) {
+      this.messageCall(tran);
     }
+  }
+
+  makeContract(amount: number, code: string) {
+    const address = sha256(this.bc.address + this.bc.getNonce());
+    const payload: Deploy = { code };
+    const data: ITransactionData = { type: ETransactionType.deploy, payload };
+    return this.bc.makeTransaction(address, amount, data);
+  }
+
+  makeMessageCall(address: string, amount: number, payload: MessageCall) {
+    const data: ITransactionData = {
+      type: ETransactionType.messagecall,
+      payload
+    };
+    return this.bc.makeTransaction(address, amount, data);
   }
 }

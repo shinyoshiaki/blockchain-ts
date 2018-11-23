@@ -1,20 +1,18 @@
 import test from "ava";
-import Contract from "../../contract/contract";
+import ContractVM from "../../contract/contractVM";
 
 const code = `
-const initialState = { val1: 0 };
+const initialState = { v0: 0 };
 
-function reducer(prevState = initialState, action = { type: "", data: "{}" }) {
-  console.log({ action });
-  console.log("contract", { state });
-  const data = action.data
+function reducer(prevState = initialState, action = { type: "", data: {} }) {  
+  const data = action.data;
   switch (action.type) {
     case "increment":
-      prevState.val1++;
+      prevState.v0++;
       state = prevState;
       break;
     case "add":
-      prevState.val1 += parseInt(data.val2, 10);
+      prevState.v0 += parseInt(data.v1, 10);
       state = prevState;
       break;
     default:
@@ -24,13 +22,12 @@ function reducer(prevState = initialState, action = { type: "", data: "{}" }) {
 }
 `;
 
-const contract = new Contract("test", 0, code);
-
-contract.messageCall("add", { val2: "4" });
-contract.messageCall("add", { val2: "4" });
+const contract = new ContractVM("test", code);
+contract.messageCall("add", { v1: "4" });
+contract.messageCall("add", { v1: "4" });
 contract.messageCall("increment");
 contract.messageCall("increment");
 
 test("contract", test => {
-  test.pass();
+  test.is(10, contract.state.v0);
 });

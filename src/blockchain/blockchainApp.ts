@@ -3,14 +3,17 @@ import BlockChain, { ITransaction } from "./blockchain";
 import sha1 from "sha1";
 import Multisig from "./multisig";
 import Responder from "./responder";
+import ContractVM from "../contract/contractVM";
+import Contract from "../contract/contract";
 
 export default class BlockChainApp extends BlockChain {
   multisig: Multisig;
+  contract: Contract;
   responder: Responder;
   constructor(secKey?: string, pubKey?: string) {
     super(secKey, pubKey);
     this.multisig = new Multisig(this);
-
+    this.contract = new Contract(this);
     this.responder = new Responder(this);
   }
 
