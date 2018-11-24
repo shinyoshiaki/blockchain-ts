@@ -6,7 +6,7 @@ export default class BlockChainApp extends BlockChain {
     multisig: Multisig;
     contract: Contract;
     responder: Responder;
-    constructor(secKey?: string, pubKey?: string);
+    constructor(phrase?: string);
     mine(): Promise<{}>;
     makeTransaction(recipient: string, amount: number, data: any): ITransaction | undefined;
     transactionRPC(tran: ITransaction): RPC;

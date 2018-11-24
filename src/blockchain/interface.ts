@@ -3,7 +3,7 @@ export interface multisigInfo {
   multisigPubKey: string;
   multisigAddress: string;
   sharePubKeyRsa?: string;
-  encryptSecKey?: string;
+  encryptPhrase?: string;
   threshold: number;
 }
 

@@ -3,26 +3,27 @@ import BlockChain from "../../blockchain/blockchainApp";
 import { multisigInfo } from "../../blockchain/interface";
 import { typeRPC } from "../../blockchain/responder";
 import { pub_a, sec_a, pub_b, sec_b, sec_c, pub_c } from "../../util/debug";
+import Cypher from "../../blockchain/crypto/cypher";
 var aes256 = require("aes256");
 
 main();
 
 async function main() {
   //マルチシグトランザクションを作る役(作成役とする)
-  const bc1 = new BlockChain(sec_c, pub_c);
+  const bc1 = new BlockChain();
 
   //シェアキー共有者
   const friends = [];
 
-  const cypher = { public: pub_a, private: sec_a };
-  friends.push(aes256.encrypt("format", cypher.public));
+  const cypher = new Cypher();
+  friends.push(aes256.encrypt("format", cypher.pubKey));
   //承認者１
-  const bc2 = new BlockChain(cypher.private, cypher.public);
+  const bc2 = new BlockChain(cypher.phrase);
 
-  const cypher2 = { public: pub_b, private: sec_b };
-  friends.push(aes256.encrypt("format", cypher2.public));
+  const cypher2 = new Cypher();
+  friends.push(aes256.encrypt("format", cypher2.pubKey));
   //承認者２
-  const bc3 = new BlockChain(cypher2.private, cypher2.public);
+  const bc3 = new BlockChain(cypher2.phrase);
 
   //作成役がマイニングしてトークンを稼ぐ
   const block = await bc1.mine();

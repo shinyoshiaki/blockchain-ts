@@ -1,6 +1,6 @@
 import sha256 from "sha256";
 import { Decimal } from "decimal.js";
-import Cypher from "./cypher";
+import Cypher from "./crypto/cypher";
 import type from "./type";
 import { ETransactionType } from "./interface";
 
@@ -39,8 +39,8 @@ export default class BlockChain {
     onTransaction: this.onTransaction
   };
 
-  constructor(secKey?: string, pubKey?: string) {
-    this.cypher = new Cypher(secKey, pubKey);
+  constructor(phrase?: string) {
+    this.cypher = new Cypher(phrase);
     this.address = sha256(this.cypher.pubKey);
     this.newBlock(0, "genesis");
   }
@@ -72,7 +72,7 @@ export default class BlockChain {
       sign: "" //このブロックを作った人の署名
     };
     //署名を生成
-    block.sign = this.cypher.encrypt(this.hash(block));
+    block.sign = this.cypher.signMessage(this.hash(block)).signature;
     //ブロックチェーンに追加
     this.chain.push(block);
 
@@ -99,7 +99,7 @@ export default class BlockChain {
       nonce: this.getNonce(),
       sign: "" //署名
     };
-    tran.sign = cypher.encrypt(this.hash(tran));
+    tran.sign = cypher.signMessage(this.hash(tran)).signature;
     //トランザクションを追加
     this.currentTransactions.push(tran);
 
@@ -138,7 +138,13 @@ export default class BlockChain {
     block.sign = "";
 
     //署名が正しいかどうか
-    if (this.cypher.decrypt(sign, publicKey) === this.hash(block)) {
+    if (
+      this.cypher.verifyMessage({
+        message: this.hash(block),
+        publicKey,
+        signature: sign
+      })
+    ) {
       block.sign = sign;
       //ナンスが正しいかどうか
       if (this.validProof(lastProof, block.proof, lastHash, owner)) {
@@ -212,7 +218,13 @@ export default class BlockChain {
     if (sha256(publicKey) === address) {
       //署名が正しいかどうか
       //公開鍵で署名を解読しトランザクションのハッシュ値と一致することを確認する。
-      if (this.cypher.decrypt(sign, publicKey) === this.hash(transaction)) {
+      if (
+        this.cypher.verifyMessage({
+          message: this.hash(transaction),
+          publicKey,
+          signature: sign
+        })
+      ) {
         const balance = this.nowAmount(address);
         //送金可能な金額を超えているかどうか
         if (balance >= amount) {

@@ -1,4 +1,4 @@
-import Cypher from "./cypher";
+import Cypher from "./crypto/cypher";
 import { ETransactionType } from "./interface";
 export interface ITransactionData {
     type: ETransactionType;
@@ -32,7 +32,7 @@ export default class BlockChain {
             [key: string]: () => void;
         };
     };
-    constructor(secKey?: string, pubKey?: string);
+    constructor(phrase?: string);
     hash(obj: any): string;
     jsonStr(obj: any): string;
     newBlock(proof: any, previousHash: string): {
