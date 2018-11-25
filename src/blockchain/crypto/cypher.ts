@@ -31,7 +31,6 @@ export default class Cypher {
     } = getPrivateAndPublicKeyBytesFromPassphrase(this.phrase);
     this.pubKey = bufferToHex(publicKeyBytes);
     this.secKey = bufferToHex(privateKeyBytes);
-    console.log({ p: this.pubKey, s: this.secKey });
   }
 
   encrypt(raw: string, recipientPublicKey: string) {
@@ -57,7 +56,10 @@ export default class Cypher {
 
   signMessage(raw: string) {
     const result = signMessageWithPassphrase(raw, this.phrase);
-    return result;
+    return {
+      message: result.message,
+      signature: result.signature
+    };
   }
 
   verifyMessage({

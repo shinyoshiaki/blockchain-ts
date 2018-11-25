@@ -8,6 +8,9 @@ export default class Cypher {
     constructor(phrase?: string);
     encrypt(raw: string, recipientPublicKey: string): string;
     decrypt(encrypted: string): string;
-    signMessage(raw: string): SignedMessageWithOnePassphrase;
+    signMessage(raw: string): {
+        message: string;
+        signature: string;
+    };
     verifyMessage({ message, publicKey, signature }: SignedMessageWithOnePassphrase): boolean;
 }

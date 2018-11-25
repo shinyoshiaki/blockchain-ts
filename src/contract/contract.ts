@@ -21,8 +21,17 @@ export default class Contract {
   }
 
   private deploy(tran: ITransaction) {
+    const sign = JSON.stringify(
+      this.bc.cypher.signMessage(Math.random().toString())
+    );
+
     const payload: Deploy = tran.data.payload;
-    const contract = new ContractVM(tran.recipient, payload.code);
+    const contract = new ContractVM(
+      tran.recipient,
+      payload.code,
+      this.bc.cypher.pubKey,
+      sign
+    );
     this.contracts[contract.address] = contract;
   }
 

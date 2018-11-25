@@ -53,7 +53,7 @@ async function main() {
   };
 
   //作成役がマルチシグアドレスを生成
-  let tran: any = bc1.multisig.makeNewMultiSigAddress(friends, 3, 1);
+  let tran: any = bc1.multisig.makeNewMultiSigAddress(friends, "format", 3, 1);
 
   //承認者がマルチシグアドレスのトランザクションをresponderに渡す
   bc2.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });

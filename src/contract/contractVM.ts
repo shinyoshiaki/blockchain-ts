@@ -1,7 +1,5 @@
-import sha256 from "sha256";
 import { tokenize } from "esprima";
-import { ITransaction } from "../blockchain/blockchain";
-import { ETransactionType } from "../blockchain/interface";
+import { verifyMessageWithPublicKey } from "../blockchain/crypto/sign";
 
 const word = [
   "reducer",
@@ -16,6 +14,7 @@ const whitelist = ["console", "log", "JSON", "parse", "parseInt"];
 let name: string[] = [];
 for (let i = 0; i < 1000; i++) {
   name.push("v" + i);
+  name.push("a" + i);
   name.push("f" + i);
 }
 
@@ -57,11 +56,20 @@ export default class ContractVM {
   address: string;
   code?: any;
   state: any = {};
-  constructor(address: string, code: string) {
+  constructor(address: string, code: string, pubkey: string, sign: string) {
     this.address = address;
     this.code = code;
     if (checkcode(code)) {
       let state = {};
+      function isOwner() {
+        const json: { message: string; signature: string } = JSON.parse(sign);
+        return verifyMessageWithPublicKey({
+          message: json.message,
+          publicKey: pubkey,
+          signature: json.signature
+        });
+      }
+      console.log("isowner", isOwner());
       eval(code + `reducer()`);
       this.state = state;
     }
@@ -74,7 +82,7 @@ export default class ContractVM {
         data
       )}})`;
       const code = this.code + func;
-      if (checkcode(code)) {        
+      if (checkcode(code)) {
         eval(code);
         console.log("msgcall", { state });
         this.state = state;

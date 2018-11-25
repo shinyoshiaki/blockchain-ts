@@ -3,9 +3,9 @@ import { multisigInfo, ETransactionType } from "./interface";
 import sha256 from "sha256";
 import Cypher from "./crypto/cypher";
 
-import sha1 from "sha1";
 import BlockChainApp from "./blockchainApp";
 import { IEvents, excuteEvent } from "../util";
+import { bufferToHex, hexToBuffer } from "./crypto/buffer";
 const Buffer = require("buffer/").Buffer;
 var aes256 = require("aes256");
 const sss = require("shamirs-secret-sharing");
@@ -19,10 +19,9 @@ export enum type {
 
 interface multisigData {
   myShare: string;
-  shares: Array<string>;
+  shares: string[];
   threshold: number;
   pubKey: string;
-  encryptPhrase: string;
   isOwner?: boolean;
 }
 
@@ -36,7 +35,6 @@ export default class Multisig {
   multiSig: { [key: string]: multisigData } = {};
   address: string;
   b: BlockChainApp;
-  cypher: Cypher;
   private onMultisigTran: IEvents = {};
   private onMultisigTranDone: IEvents = {};
   events = {
@@ -46,16 +44,12 @@ export default class Multisig {
 
   constructor(blockchain: BlockChainApp) {
     this.b = blockchain;
-    console.log("address", this.b.address);
     this.address = this.b.address;
-    //秘密鍵と公開鍵を生成
-    this.cypher = new Cypher();
   }
 
   //通信などにより得られた命令に対する処理
   responder(tran: ITransaction) {
     const data = tran.data;
-    console.log("responder", { data });
     if (data.type === ETransactionType.multisig) {
       const tranMultisig: ITranMultisig = data.payload;
       switch (tranMultisig.opt) {
@@ -83,56 +77,49 @@ export default class Multisig {
   //マルチシグのアドレスを生成
   makeNewMultiSigAddress(
     friendsPubKeyAes: Array<string>, //共有者の情報
+    friendsPubkeyRsaPass: string,
     vote: number, //しきい値
     amount: number //金額
   ) {
-    //次に使うaeskeyを生成
-    const aesKey = sha1(Math.random().toString()).toString();
-
-    //aeskeyで秘密鍵を暗号化
-    const encryptPhrase: string = aes256.encrypt(aesKey, this.cypher.phrase);
-
+    const cypher = new Cypher();
     //シャミアの秘密分散ライブラリでaeskeyをシェア化
-    const shareKeys: any[] = sss.split(Buffer.from(aesKey), {
+    const shareKeys: any[] = sss.split(Buffer.from(cypher.phrase), {
       shares: friendsPubKeyAes.length + 1,
       threshold: vote
     });
-
-    console.log({ shareKeys });
+    console.log(cypher.phrase, { shareKeys });
+    const phrase: Buffer[] = sss.combine(shareKeys).toString();
+    console.log({ phrase });
 
     //マルチシグアドレスを導出
-    const address = sha256(this.cypher.pubKey);
+    const address = sha256(cypher.pubKey);
     const shares: { [key: string]: string } = {};
 
     //シェアの共有者にシェアを配布
     friendsPubKeyAes.forEach((aes, i) => {
-      const pubKey = aes256.decrypt("format", aes);
+      const pubKey = aes256.decrypt(friendsPubkeyRsaPass, aes);
       const id = sha256(pubKey);
-      console.log("makeNewMultiSigAddress sharekey", shareKeys[i]);
       //共有者の公開鍵でシェアを暗号化
-      shares[id] = this.cypher.encrypt(shareKeys[i], pubKey);
+      shares[id] = cypher.encrypt(bufferToHex(shareKeys[i]), pubKey);
     });
-    console.log({ shares });
 
     //自身にシェアを一つ割当
-    const myShare = shareKeys[shareKeys.length - 1];
+    const myShare = bufferToHex(shareKeys[shareKeys.length - 1]);
 
     //マルチシグの情報を保管
     this.multiSig[address] = {
       myShare,
       threshold: vote,
       isOwner: false,
-      pubKey: this.cypher.pubKey,
-      encryptPhrase,
+      pubKey: cypher.pubKey,
       shares: []
     };
     this.multiSig[address].shares.push(myShare);
 
     //ブロックチェーンに載せるマルチシグ情報
     const info: multisigInfo = {
-      multisigPubKey: this.cypher.pubKey,
+      multisigPubKey: cypher.pubKey,
       multisigAddress: address,
-      encryptPhrase,
       threshold: vote
     };
 
@@ -141,7 +128,6 @@ export default class Multisig {
       type: ETransactionType.multisig,
       payload: { opt: type.MAKE, shares, info }
     });
-    console.log("makeNewMultiSigAddress done", { tran });
     return tran;
   }
 
@@ -150,14 +136,11 @@ export default class Multisig {
     shares: { [key: string]: string },
     info: multisigInfo
   ) {
-    console.log("getMultiSigKey");
-    if (info.encryptPhrase && Object.keys(shares).includes(this.address)) {
-      console.log("getMultiSigKey start");
-
+    if (Object.keys(shares).includes(this.address)) {
       //シェアキーの公開鍵暗号を秘密鍵で解除
-      const key = this.cypher.decrypt(shares[this.address]);
+      const key = this.b.cypher.decrypt(shares[this.address]);
 
-      console.log("getMultiSigKey get my key", key);
+      console.log("getMultiSigKey get my key", { key });
 
       //マルチシグ情報を保存
       this.multiSig[info.multisigAddress] = {
@@ -165,7 +148,6 @@ export default class Multisig {
         isOwner: false,
         threshold: info.threshold,
         pubKey: info.multisigPubKey,
-        encryptPhrase: info.encryptPhrase,
         shares: []
       };
     }
@@ -180,11 +162,11 @@ export default class Multisig {
     if (!data) return;
     const multisigPubKey = data.pubKey;
 
-    //自分の持っているシェアキーを公開鍵で暗号化
-    const shareKeyRsa = this.cypher.encrypt(data.myShare);
-    crypto
-      .publicEncrypt(this.b.cypher.pubKey, Buffer.from(data.myShare, "base64"))
-      .toString("base64");
+    //自分の持っているシェアキーを暗号化
+    const shareKeyRsa = this.b.cypher.encrypt(
+      data.myShare,
+      this.b.cypher.pubKey
+    );
 
     //ブロックチェーンに載せる情報
     const info: multisigInfo = {
@@ -199,7 +181,6 @@ export default class Multisig {
 
     //マルチシグアドレスの残高を取得
     const amount = this.b.nowAmount(multisigAddress);
-    console.log("multisig tran", { amount });
 
     //トランザクションを生成
     const tran = this.b.newTransaction(this.b.address, multisigAddress, 0, {
@@ -210,21 +191,19 @@ export default class Multisig {
         info
       }
     });
-    console.log("makeMultiSigTransaction done", { tran });
     return tran;
   }
 
   //イベントコールバックに任せる
   private onMultiSigTransaction(info: multisigInfo) {
     if (Object.keys(this.multiSig).includes(info.multisigAddress)) {
-      console.log("onMultisigTran");
+      //承認するかどうかを決めたいので、イベントを一回挟んでいる。
       excuteEvent(this.onMultisigTran, info);
     }
   }
 
   //マルチシグの承認
   approveMultiSig(info: multisigInfo) {
-    console.log("approveMultiSig");
     if (info.ownerPubKey) {
       //マルチシグの情報があるかを調べる
       if (Object.keys(this.multiSig).includes(info.multisigAddress)) {
@@ -232,10 +211,9 @@ export default class Multisig {
 
         //シェアキーを取り出す
         const key = this.multiSig[info.multisigAddress].myShare;
-        //シェアキーをマルチシグトランザクション実行者の公開鍵で暗号化
-        const shareKeyRsa = crypto
-          .publicEncrypt(info.ownerPubKey, Buffer.from(key, "base64"))
-          .toString("base64");
+
+        const shareKeyRsa = this.b.cypher.encrypt(key, info.ownerPubKey);
+
         info.sharePubKeyRsa = shareKeyRsa;
         //トランザクションを生成
         const tran = this.b.newTransaction(
@@ -263,14 +241,9 @@ export default class Multisig {
       info.ownerPubKey === this.b.cypher.pubKey &&
       Object.keys(this.multiSig).includes(info.multisigAddress)
     ) {
-      console.log("type.APPROVE");
       const shares = this.multiSig[info.multisigAddress].shares;
 
-      //シェアキーの公開鍵暗号を自身の秘密鍵で解除
-      const shareKey = crypto.privateDecrypt(
-        this.b.cypher.secKey,
-        Buffer.from(info.sharePubKeyRsa, "base64")
-      );
+      const shareKey = this.b.cypher.decrypt(info.sharePubKeyRsa);
 
       //新しいシェアキーなら保存する。
       if (!shares.includes(shareKey)) {
@@ -288,16 +261,12 @@ export default class Multisig {
   }
 
   //トランザクションの承認
-  private verifyMultiSig(info: multisigInfo, shares: Array<any>) {
-    console.log("verifyMultiSig start", { shares });
+  private verifyMultiSig(info: multisigInfo, _shares: Array<any>) {
+    console.log("verifyMultiSig start", { _shares });
     //シャミアのシェアキーからシークレットを復号化
-    const recovered = sss.combine(shares).toString();
-    console.log({ recovered });
-
-    //aes暗号化されたシークレットキーを取り出す。
-    const encryptedPhrase = this.multiSig[info.multisigAddress].encryptPhrase;
-    //aes暗号を復号化
-    const phrase = aes256.decrypt(recovered, encryptedPhrase);
+    const shares = _shares.map(share => hexToBuffer(share));
+    console.log({ shares });
+    const phrase = sss.combine(shares).toString();
     console.log({ phrase });
     const cypher = new Cypher(phrase);
     const address = info.multisigAddress;
