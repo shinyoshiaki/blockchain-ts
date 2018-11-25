@@ -1,5 +1,5 @@
 require("babel-polyfill");
-import BlockChain, { ITransaction } from "./blockchain";
+import BlockChain, { ITransaction, ITransactionData } from "./blockchain";
 import Multisig from "./multisig";
 import Responder, { RPC, typeRPC } from "./responder";
 import Contract from "../contract/contract";
@@ -23,28 +23,20 @@ export default class BlockChainApp extends BlockChain {
       //最後のブロックのハッシュ値
       const previousHash = this.hash(this.lastBlock());
       //新しいブロック
-      const block = this.newBlock(proof, previousHash);
-      console.log("new block forged", { block });
-      // this.saveChain();
+      const block = this.newBlock(proof, previousHash);            
       //完了
       resolve(block);
     });
   }
 
-  makeTransaction(recipient: string, amount: number, data: any) {
-    //入力情報が足りているか
-    if (!(recipient && amount)) {
-      console.log("input error");
-      return;
-    }
+  makeTransaction(recipient: string, amount: number, data: ITransactionData) {  
     //残高が足りているか
     if (amount > this.nowAmount()) {
       console.log("input error");
       return;
     }
     //トランザクションの生成
-    const tran = this.newTransaction(this.address, recipient, amount, data);
-    console.log("makeTransaction", tran);
+    const tran = this.newTransaction(this.address, recipient, amount, data);    
     return tran;
   }
 

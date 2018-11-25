@@ -6,6 +6,7 @@ import sha256 from "sha256";
 
 interface Deploy {
   code: string;
+  address: string;
 }
 
 interface MessageCall {
@@ -51,7 +52,7 @@ export default class Contract {
 
   makeContract(amount: number, code: string) {
     const address = sha256(this.bc.address + this.bc.getNonce());
-    const payload: Deploy = { code };
+    const payload: Deploy = { code, address };
     const data: ITransactionData = { type: ETransactionType.deploy, payload };
     return this.bc.makeTransaction(address, amount, data);
   }

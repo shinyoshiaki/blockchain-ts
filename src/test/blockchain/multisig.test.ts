@@ -2,7 +2,6 @@ import test from "ava";
 import BlockChain from "../../blockchain/blockchainApp";
 import { multisigInfo } from "../../blockchain/interface";
 import { typeRPC } from "../../blockchain/responder";
-import { pub_a, sec_a, pub_b, sec_b, sec_c, pub_c } from "../../util/debug";
 import Cypher from "../../blockchain/crypto/cypher";
 var aes256 = require("aes256");
 
@@ -26,16 +25,13 @@ async function main() {
   const bc3 = new BlockChain(cypher2.phrase);
 
   //作成役がマイニングしてトークンを稼ぐ
-  const block = await bc1.mine();
-  console.log({ block });
-  console.log("amount", bc1.address, bc1.nowAmount(bc1.address));
+  await bc1.mine();
 
   //作成役と承認者のブロックチェーンのフォークを解決
   bc2.chain = bc1.chain;
   bc3.chain = bc1.chain;
 
-  bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {
-    console.log("multisig test done");
+  bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {    
     test("multisig", test => {
       test.pass();
     });

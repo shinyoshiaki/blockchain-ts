@@ -10,7 +10,15 @@ const word = [
   "data",
   "state"
 ];
-const whitelist = ["console", "log", "JSON", "parse", "parseInt"];
+const whitelist = [
+  "console",
+  "log",
+  "JSON",
+  "parse",
+  "parseInt",
+  "isOwner",
+  "pubkey"
+];
 let name: string[] = [];
 for (let i = 0; i < 1000; i++) {
   name.push("v" + i);
@@ -56,7 +64,7 @@ export default class ContractVM {
   address: string;
   code?: any;
   state: any = {};
-  constructor(address: string, code: string, pubkey: string, sign: string) {
+  constructor(address: string, code: string, _pubkey: string, sign: string) {
     this.address = address;
     this.code = code;
     if (checkcode(code)) {
@@ -69,6 +77,7 @@ export default class ContractVM {
           signature: json.signature
         });
       }
+      const pubkey = _pubkey;
       console.log("isowner", isOwner());
       eval(code + `reducer()`);
       this.state = state;

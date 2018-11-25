@@ -87,9 +87,6 @@ export default class Multisig {
       shares: friendsPubKeyAes.length + 1,
       threshold: vote
     });
-    console.log(cypher.phrase, { shareKeys });
-    const phrase: Buffer[] = sss.combine(shareKeys).toString();
-    console.log({ phrase });
 
     //マルチシグアドレスを導出
     const address = sha256(cypher.pubKey);
@@ -140,8 +137,6 @@ export default class Multisig {
       //シェアキーの公開鍵暗号を秘密鍵で解除
       const key = this.b.cypher.decrypt(shares[this.address]);
 
-      console.log("getMultiSigKey get my key", { key });
-
       //マルチシグ情報を保存
       this.multiSig[info.multisigAddress] = {
         myShare: key,
@@ -155,8 +150,6 @@ export default class Multisig {
 
   //マルチシグのトランザクションを生成
   makeMultiSigTransaction(multisigAddress: string) {
-    console.log("makeMultiSigTransaction start");
-
     //マルチシグアドレスの情報を自分が持っているのか
     const data = this.multiSig[multisigAddress];
     if (!data) return;
@@ -206,9 +199,7 @@ export default class Multisig {
   approveMultiSig(info: multisigInfo) {
     if (info.ownerPubKey) {
       //マルチシグの情報があるかを調べる
-      if (Object.keys(this.multiSig).includes(info.multisigAddress)) {
-        console.log("approveMultiSig start");
-
+      if (Object.keys(this.multiSig).includes(info.multisigAddress)) {      
         //シェアキーを取り出す
         const key = this.multiSig[info.multisigAddress].myShare;
 
@@ -227,8 +218,7 @@ export default class Multisig {
               info: info
             }
           }
-        );
-        console.log("approveMultiSig done", { tran });
+        );        
         return tran;
       }
     }
@@ -246,14 +236,12 @@ export default class Multisig {
       const shareKey = this.b.cypher.decrypt(info.sharePubKeyRsa);
 
       //新しいシェアキーなら保存する。
-      if (!shares.includes(shareKey)) {
-        console.log("add sharekey", { shareKey });
+      if (!shares.includes(shareKey)) {        
         shares.push(shareKey);
       }
 
       //シェアキーの数がしきい値を超えればトランザクションを承認
-      if (shares.length >= info.threshold) {
-        console.log("verify multisig", { shares });
+      if (shares.length >= info.threshold) {        
         //トランザクションの承認関数
         this.verifyMultiSig(info, shares);
       }
@@ -262,12 +250,9 @@ export default class Multisig {
 
   //トランザクションの承認
   private verifyMultiSig(info: multisigInfo, _shares: Array<any>) {
-    console.log("verifyMultiSig start", { _shares });
     //シャミアのシェアキーからシークレットを復号化
-    const shares = _shares.map(share => hexToBuffer(share));
-    console.log({ shares });
-    const phrase = sss.combine(shares).toString();
-    console.log({ phrase });
+    const shares = _shares.map(share => hexToBuffer(share));    
+    const phrase = sss.combine(shares).toString();    
     const cypher = new Cypher(phrase);
     const address = info.multisigAddress;
     //マルチシグアドレスの残高を取得
@@ -280,8 +265,7 @@ export default class Multisig {
         amount,
         { type: ETransactionType.transaction, payload: "verifymultisig" },
         cypher
-      );
-      console.log("verifyMultiSig done", this.b.address, { tran });
+      );      
       excuteEvent(this.onMultisigTranDone);
       return tran;
     }

@@ -1,10 +1,9 @@
+import BlockChainApp from "../../blockchain/blockchainApp";
+import { typeRPC } from "../../blockchain/responder";
 import test from "ava";
-import ContractVM from "../../contract/contractVM";
-import Cypher from "../../blockchain/crypto/cypher";
 
 const code = `
 const initialState = { v0: 0 };
-
 function reducer(prevState = initialState, action = { type: "", data: {} }) {  
   const data = action.data;
   switch (action.type) {
@@ -22,18 +21,36 @@ function reducer(prevState = initialState, action = { type: "", data: {} }) {
 }
 `;
 
-const cypher = new Cypher();
-const sign = JSON.stringify(cypher.signMessage("test"));
-const contract = new ContractVM("test", code, cypher.pubKey, sign);
-contract.messageCall("add", { v1: "4" });
-contract.messageCall("add", { v1: "4" });
-contract.messageCall("increment");
-contract.messageCall("increment");
+main();
 
-const mcypher = new Cypher();
-const mcontract = new ContractVM("test", code, mcypher.pubKey, sign);
-mcontract.messageCall("increment");
+async function main() {
+  const b = new BlockChainApp();
+  const bs: BlockChainApp[] = [];
+  for (let i = 0; i < 2; i++) {
+    bs.push(new BlockChainApp());
+  }
+  await b.mine();
+  bs.forEach(bc => {
+    bc.chain = b.chain;
+  });
 
-test("contract", test => {
-  test.is(10, contract.state.v0);
-});
+  let tran: any = b.contract.makeContract(0, code);
+  const address = tran.data.payload.address;
+  bs.forEach(bc => {
+    bc.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+  });
+
+  tran = b.contract.makeMessageCall(address, 0, {
+    type: "add",
+    data: { v1: "4" }
+  });
+  bs.forEach(bc => {
+    bc.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+  });
+
+  test("blockchain-contract", test => {
+    bs.forEach(bc => {
+      test.is(bc.contract.contracts[address].state.v0, 4);
+    });
+  });
+}
