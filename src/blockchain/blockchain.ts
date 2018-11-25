@@ -1,9 +1,26 @@
 import sha256 from "sha256";
 import { Decimal } from "decimal.js";
-import Cypher from "./cypher";
+import Cypher from "./crypto/cypher";
 import type from "./type";
+import { ETransactionType } from "./interface";
 
-const diff = /^0000/;
+const diff = /^000/;
+
+export interface ITransactionData {
+  type: ETransactionType;
+  payload: any;
+}
+
+export interface ITransaction {
+  sender: string;
+  recipient: string;
+  amount: number;
+  data: ITransactionData;
+  now: any;
+  publicKey: string;
+  nonce: number;
+  sign: string;
+}
 
 export default class BlockChain {
   chain: Array<any> = [];
@@ -22,8 +39,8 @@ export default class BlockChain {
     onTransaction: this.onTransaction
   };
 
-  constructor(secKey?: string, pubKey?: string) {
-    this.cypher = new Cypher(secKey, pubKey);
+  constructor(phrase?: string) {
+    this.cypher = new Cypher(phrase);
     this.address = sha256(this.cypher.pubKey);
     this.newBlock(0, "genesis");
   }
@@ -39,7 +56,10 @@ export default class BlockChain {
 
   newBlock(proof: any, previousHash: string) {
     //採掘報酬
-    this.newTransaction(type.SYSTEM, this.address, 1, type.REWARD);
+    this.newTransaction(type.SYSTEM, this.address, 1, {
+      type: ETransactionType.transaction,
+      payload: "reward"
+    });
 
     const block = {
       index: this.chain.length + 1, //ブロックの番号
@@ -52,7 +72,7 @@ export default class BlockChain {
       sign: "" //このブロックを作った人の署名
     };
     //署名を生成
-    block.sign = this.cypher.encrypt(this.hash(block));
+    block.sign = this.cypher.signMessage(this.hash(block)).signature;
     //ブロックチェーンに追加
     this.chain.push(block);
 
@@ -66,19 +86,20 @@ export default class BlockChain {
     sender: string,
     recipient: string,
     amount: number,
-    data: any,
+    data: { type: ETransactionType; payload: any },
     cypher = this.cypher
   ) {
-    const tran = {
+    const tran: ITransaction = {
       sender: sender, //送信アドレス
       recipient: recipient, //受取アドレス
       amount: amount, //量
       data: data, //任意のメッセージ
       now: Date.now(), //タイムスタンプ
-      publicKey: cypher.pubKey, //公開鍵
+      publicKey: cypher.pubKey, //公開鍵,
+      nonce: this.getNonce(),
       sign: "" //署名
     };
-    tran.sign = cypher.encrypt(this.hash(tran));
+    tran.sign = cypher.signMessage(this.hash(tran)).signature;
     //トランザクションを追加
     this.currentTransactions.push(tran);
 
@@ -117,7 +138,13 @@ export default class BlockChain {
     block.sign = "";
 
     //署名が正しいかどうか
-    if (this.cypher.decrypt(sign, publicKey) === this.hash(block)) {
+    if (
+      this.cypher.verifyMessage({
+        message: this.hash(block),
+        publicKey,
+        signature: sign
+      })
+    ) {
       block.sign = sign;
       //ナンスが正しいかどうか
       if (this.validProof(lastProof, block.proof, lastHash, owner)) {
@@ -171,7 +198,7 @@ export default class BlockChain {
     return true;
   }
 
-  validTransaction(transaction: any) {
+  validTransaction(transaction: ITransaction) {
     const amount = transaction.amount;
     const sign = transaction.sign;
 
@@ -179,7 +206,7 @@ export default class BlockChain {
       return prev.sign === sign;
     });
     if (result) {
-      console.log("duplicate error");
+      console.log("duplicate error", { result });
       return false;
     }
 
@@ -191,7 +218,13 @@ export default class BlockChain {
     if (sha256(publicKey) === address) {
       //署名が正しいかどうか
       //公開鍵で署名を解読しトランザクションのハッシュ値と一致することを確認する。
-      if (this.cypher.decrypt(sign, publicKey) === this.hash(transaction)) {
+      if (
+        this.cypher.verifyMessage({
+          message: this.hash(transaction),
+          publicKey,
+          signature: sign
+        })
+      ) {
         const balance = this.nowAmount(address);
         //送金可能な金額を超えているかどうか
         if (balance >= amount) {
@@ -212,13 +245,7 @@ export default class BlockChain {
     }
   }
 
-  addTransaction(tran: any) {
-    // try {
-
-    // } catch (error) {
-    //   console.log(error);
-    //   console.log({ tran });
-    // }
+  addTransaction(tran: ITransaction) {
     if (this.validTransaction(tran)) {
       console.log("validTransaction", { tran });
       //トランザクションを追加
@@ -267,5 +294,22 @@ export default class BlockChain {
       }
     });
     return tokenNum.toNumber();
+  }
+
+  getNonce(address = this.address) {
+    let nonce = 0;
+    this.chain.forEach(block => {
+      block.transactions.forEach((transaction: ITransaction) => {
+        if (transaction.sender === address) {
+          nonce++;
+        }
+      });
+    });
+    this.currentTransactions.forEach(transaction => {
+      if (transaction.recipient === address) {
+        nonce++;
+      }
+    });
+    return nonce;
   }
 }

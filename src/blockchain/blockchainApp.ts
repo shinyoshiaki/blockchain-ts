@@ -1,15 +1,17 @@
 require("babel-polyfill");
-import BlockChain from "./blockchain";
-import sha1 from "sha1";
+import BlockChain, { ITransaction } from "./blockchain";
 import Multisig from "./multisig";
-import Responder from "./responder";
+import Responder, { RPC, typeRPC } from "./responder";
+import Contract from "../contract/contract";
 
 export default class BlockChainApp extends BlockChain {
   multisig: Multisig;
+  contract: Contract;
   responder: Responder;
-  constructor(secKey?: string, pubKey?: string) {
-    super(secKey, pubKey);
+  constructor(phrase?: string) {
+    super(phrase);
     this.multisig = new Multisig(this);
+    this.contract = new Contract(this);
     this.responder = new Responder(this);
   }
 
@@ -43,31 +45,11 @@ export default class BlockChainApp extends BlockChain {
     //トランザクションの生成
     const tran = this.newTransaction(this.address, recipient, amount, data);
     console.log("makeTransaction", tran);
-    this.saveChain();
-
     return tran;
   }
 
-  getChain() {
-    return this.chain;
-  }
-
-  saveChain() {
-    localStorage.setItem("blockchain", JSON.stringify(this.chain));
-  }
-
-  loadChain() {
-    const keyword = sha1(this.cypher.pubKey + this.cypher.secKey);
-    localStorage.setItem(
-      keyword,
-      JSON.stringify({
-        publicKey: this.cypher.pubKey,
-        secretKey: this.cypher.secKey
-      })
-    );
-    const chain = localStorage.getItem("blockchain");
-    if (chain) {
-      this.chain = JSON.parse(chain);
-    }
+  transactionRPC(tran: ITransaction) {
+    const rpc: RPC = { type: typeRPC.TRANSACRION, body: tran };
+    return rpc;
   }
 }

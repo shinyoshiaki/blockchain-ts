@@ -1,5 +1,7 @@
-import BlockChain from "./blockchain";
+import { ITransaction } from "./blockchain";
 import { multisigInfo } from "./interface";
+import BlockChainApp from "./blockchainApp";
+import { IEvents } from "../util";
 export declare enum type {
     MAKE = "multisig-make",
     TRAN = "multisig-tran",
@@ -8,10 +10,9 @@ export declare enum type {
 }
 interface multisigData {
     myShare: string;
-    shares: Array<string>;
+    shares: string[];
     threshold: number;
     pubKey: string;
-    encryptSecKey: string;
     isOwner?: boolean;
 }
 export default class Multisig {
@@ -19,57 +20,23 @@ export default class Multisig {
         [key: string]: multisigData;
     };
     address: string;
-    b: BlockChain;
+    b: BlockChainApp;
     private onMultisigTran;
     private onMultisigTranDone;
     events: {
-        onMultisigTran: {
-            [key: string]: (v?: any) => void;
-        };
+        onMultisigTran: IEvents;
+        onMultisigTranDone: IEvents;
     };
-    private excuteEvent;
-    constructor(blockchain: BlockChain);
-    responder(tran: any): void;
+    constructor(blockchain: BlockChainApp);
+    responder(tran: ITransaction): void;
     makeNewMultiSigAddress(friendsPubKeyAes: Array<string>, //共有者の情報
-    vote: number, //しきい値
-    amount: number): {
-        sender: string;
-        recipient: string;
-        amount: number;
-        data: any;
-        now: number;
-        publicKey: string;
-        sign: string;
-    };
+    friendsPubkeyRsaPass: string, vote: number, //しきい値
+    amount: number): ITransaction;
     private getMultiSigKey;
-    makeMultiSigTransaction(multisigAddress: string): {
-        sender: string;
-        recipient: string;
-        amount: number;
-        data: any;
-        now: number;
-        publicKey: string;
-        sign: string;
-    } | undefined;
+    makeMultiSigTransaction(multisigAddress: string): ITransaction | undefined;
     private onMultiSigTransaction;
-    approveMultiSig(info: multisigInfo): {
-        sender: string;
-        recipient: string;
-        amount: number;
-        data: any;
-        now: number;
-        publicKey: string;
-        sign: string;
-    } | undefined;
+    approveMultiSig(info: multisigInfo): ITransaction | undefined;
     private onApproveMultiSig;
-    verifyMultiSig(info: multisigInfo, shares: Array<any>): {
-        sender: string;
-        recipient: string;
-        amount: number;
-        data: any;
-        now: number;
-        publicKey: string;
-        sign: string;
-    } | undefined;
+    private verifyMultiSig;
 }
 export {};

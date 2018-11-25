@@ -1,4 +1,6 @@
-import BlockChain from "./blockchain";
+import BlockChain, { ITransaction } from "./blockchain";
+import BlockChainApp from "./blockchainApp";
+import { IEvents, excuteEvent } from "../util";
 
 //コールバックは強制、イベントは任意にしようとしている
 interface callback {
@@ -6,7 +8,12 @@ interface callback {
   onConflict: (chain: any, nodeId: any) => void;
 }
 
-export enum type {
+export interface RPC {
+  type: typeRPC;
+  body: any;
+}
+
+export enum typeRPC {
   NEWBLOCK = "NEWBLOCK",
   TRANSACRION = "TRANSACRION",
   CONFLICT = "CONFLICT",
@@ -14,14 +21,19 @@ export enum type {
 }
 
 export default class Responder {
-  callback?: callback;
+  callback: callback = {
+    checkConflict: () => {},
+    onConflict: () => {}
+  };
   onResolveConflict?: (chain: Array<any>) => void;
-  bc: BlockChain;
+  private onTransaction: IEvents = {};
+  events = { onTransaction: this.onTransaction };
+  bc: BlockChainApp;
   RPC: any = {};
-  constructor(_bc: BlockChain) {
+  constructor(_bc: BlockChainApp) {
     this.bc = _bc;
 
-    this.RPC[type.NEWBLOCK] = async (block: any) => {
+    this.RPC[typeRPC.NEWBLOCK] = async (block: any) => {
       console.log("blockchainApp", "new block");
       //受け取ったブロックのインデックスが自分のチェーンより2長いか
       //現時点のチェーンの長さが1ならブロックチェーンの分岐を疑う
@@ -38,7 +50,7 @@ export default class Responder {
     };
 
     //トランザクションに対する処理
-    this.RPC[type.TRANSACRION] = (body: any) => {
+    this.RPC[typeRPC.TRANSACRION] = (body: ITransaction) => {
       console.log("blockchainApp transaction", body);
       if (
         //トランザクションプールに受け取ったトランザクションがあるか簡易的に調べる
@@ -48,25 +60,28 @@ export default class Responder {
       ) {
         //トランザクションをトランザクションプールに加える
         this.bc.addTransaction(body);
+        this.bc.multisig.responder(body);
+        this.bc.contract.responder(body);
+        excuteEvent(this.onTransaction, body);
       }
     };
 
-    this.RPC[type.CONFLICT] = (body: any) => {
+    this.RPC[typeRPC.CONFLICT] = (body: any) => {
       console.log("blockchain app check conflict");
       //自分のチェーンが質問者より長ければ、自分のチェーンを返す
       if (this.bc.chain.length > body.size) {
         console.log("blockchain app check is conflict");
-        if (this.callback) this.callback.onConflict(this.bc.chain, body.nodeId);
+        this.callback.onConflict(this.bc.chain, body.nodeId);
       }
     };
 
-    this.RPC[type.RESOLVE_CONFLICT] = (chain: Array<any>) => {
+    this.RPC[typeRPC.RESOLVE_CONFLICT] = (chain: Array<any>) => {
       if (this.onResolveConflict) this.onResolveConflict(chain);
     };
   }
 
-  runRPC(name: type, body: any) {
-    if (Object.keys(this.RPC).includes(name)) this.RPC[name](body);
+  runRPC(rpc: RPC) {
+    if (Object.keys(this.RPC).includes(rpc.type)) this.RPC[rpc.type](rpc.body);
   }
 
   private checkConflicts() {
@@ -78,7 +93,7 @@ export default class Responder {
       }, 4 * 1000);
 
       //他のノードにブロックチェーンの状況を聞く
-      if (this.callback) this.callback.checkConflict();
+      this.callback.checkConflict();
 
       //他のノードからの回答を調べる
       this.onResolveConflict = (chain: Array<any>) => {
