@@ -4,3 +4,4 @@ export interface KeypairBytes {
     readonly publicKeyBytes: Buffer;
 }
 export declare const getPrivateAndPublicKeyBytesFromPassphrase: (passphrase: string) => KeypairBytes;
+export declare const isValidPassphrase: (passphrase: string) => boolean;

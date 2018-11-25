@@ -13,22 +13,38 @@
  *
  */
 
-import { hash } from './hash';
-import { getKeyPair } from './nacl';
+import { hash } from "./hash";
+import { getKeyPair } from "./nacl";
+import mnemonic from "bitcore-mnemonic";
 
 export interface KeypairBytes {
-	readonly privateKeyBytes: Buffer;
-	readonly publicKeyBytes: Buffer;
+  readonly privateKeyBytes: Buffer;
+  readonly publicKeyBytes: Buffer;
 }
 
 export const getPrivateAndPublicKeyBytesFromPassphrase = (
-	passphrase: string,
+  passphrase: string
 ): KeypairBytes => {
-	const hashed = hash(passphrase, 'utf8');
-	const { publicKeyBytes, privateKeyBytes } = getKeyPair(hashed);
+  const hashed = hash(passphrase, "utf8");
+  const { publicKeyBytes, privateKeyBytes } = getKeyPair(hashed);
 
-	return {
-		privateKeyBytes,
-		publicKeyBytes,
-	};
+  return {
+    privateKeyBytes,
+    publicKeyBytes
+  };
+};
+
+export const isValidPassphrase = (passphrase: string) => {
+  const normalizedValue = passphrase.replace(/ +/g, " ").trim();
+  let isValid;
+  try {
+    isValid =
+      normalizedValue.split(" ").length >= 12 &&
+      mnemonic.isValid(normalizedValue);
+  } catch (e) {
+    // If the mnemonic check throws an error, we assume that the
+    // passphrase being entered isn't valid
+    isValid = false;
+  }
+  return isValid;
 };

@@ -11,6 +11,7 @@ declare module "bitcore-mnemonic" {
       toString: () => string;
     };
     toString: () => string;
+    isValid: (v: any) => boolean;
     Words: any;
   }
   const Mnemonic: Mnemonic;
