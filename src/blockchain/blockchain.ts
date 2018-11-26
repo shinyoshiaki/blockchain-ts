@@ -52,32 +52,65 @@ export function validProof(
 ) {
   const guess = `${lastProof}${proof}${lastHash}${address}`;
   const guessHash = sha256(guess);
-  //先頭から４文字が０なら成功
   return diff.test(guessHash);
 }
 
 export function validChain(chain: IBlock[]) {
   let index = 2;
+  let result = true;
   while (index < chain.length) {
-    const previousBlock = chain[index - 1];
+    const lastBlock = chain[index - 1];
+    const lastProof = lastBlock.proof;
+    const lastHash = hash(lastBlock);
     const block = chain[index];
+    const owner = block.owner;
 
     //ブロックの持つ前のブロックのハッシュ値と実際の前の
     //ブロックのハッシュ値を比較
-    if (block.previousHash !== hash(previousBlock)) {
+    if (block.previousHash !== lastHash) {
       console.log("blockchain hash error", { block });
-      return false;
+      result = false;
+      break;
     }
     //ナンスの値の検証
-    if (
-      !validProof(previousBlock.proof, block.proof, hash(block), block.owner)
-    ) {
+    if (!validProof(lastProof, block.proof, lastHash, owner)) {
       console.log("blockchain nonce error", { block });
-      return false;
+      result = false;
+      break;
     }
     index++;
   }
-  return true;
+  return result;
+}
+
+export function validBlock(lastBlock: IBlock, block: IBlock): boolean {
+  const lastProof = lastBlock.proof;
+  const lastHash = hash(lastBlock);
+  const owner = block.owner;
+  const sign = block.sign;
+  const publicKey = block.publicKey;
+  block.sign = "";
+
+  //署名が正しいかどうか
+  if (
+    verifyMessageWithPublicKey({
+      message: hash(block),
+      publicKey,
+      signature: sign
+    })
+  ) {
+    block.sign = sign;
+    //ナンスが正しいかどうか
+    if (validProof(lastProof, block.proof, lastHash, owner)) {
+      return true;
+    } else {
+      console.log("block nonce error");
+      return false;
+    }
+  } else {
+    console.log("block sign error");
+    return false;
+  }
 }
 
 export default class BlockChain {
@@ -123,6 +156,12 @@ export default class BlockChain {
     //署名を生成
     block.sign = this.cypher.signMessage(hash(block)).signature;
     //ブロックチェーンに追加
+    if (
+      this.chain.length > 0 &&
+      !validBlock(this.chain[this.chain.length - 1], block)
+    ) {
+      return undefined;
+    }
     this.chain.push(block);
 
     //トランザクションプールをリセット
@@ -160,44 +199,11 @@ export default class BlockChain {
   }
 
   addBlock(block: IBlock) {
-    if (this.validBlock(block)) {
-      console.log("validBlock");
+    if (validBlock(this.chain[this.chain.length - 1], block)) {
       this.currentTransactions = [];
       this.chain.push(block);
-
       this.callback.onAddBlock();
       excuteEvent(this.events.onAddBlock);
-    }
-  }
-
-  validBlock(block: IBlock) {
-    const lastBlock = this.lastBlock();
-    const lastProof = lastBlock.proof;
-    const lastHash = hash(lastBlock);
-    const owner = block.owner;
-    const sign = block.sign;
-    const publicKey = block.publicKey;
-    block.sign = "";
-
-    //署名が正しいかどうか
-    if (
-      verifyMessageWithPublicKey({
-        message: hash(block),
-        publicKey,
-        signature: sign
-      })
-    ) {
-      block.sign = sign;
-      //ナンスが正しいかどうか
-      if (validProof(lastProof, block.proof, lastHash, owner)) {
-        return true;
-      } else {
-        console.log("block nonce error", this.address, this.chain);
-        return false;
-      }
-    } else {
-      console.log("block sign error", this.address);
-      return false;
     }
   }
 

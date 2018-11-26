@@ -28,6 +28,7 @@ export declare function hash(obj: any): string;
 export declare function jsonStr(obj: any): string;
 export declare function validProof(lastProof: number, proof: number, lastHash: string, address: string): boolean;
 export declare function validChain(chain: IBlock[]): boolean;
+export declare function validBlock(lastBlock: IBlock, block: IBlock): boolean;
 export default class BlockChain {
     chain: IBlock[];
     currentTransactions: Array<any>;
@@ -47,14 +48,13 @@ export default class BlockChain {
         };
     };
     constructor(phrase?: string);
-    newBlock(proof: any, previousHash: string): IBlock;
+    newBlock(proof: any, previousHash: string): IBlock | undefined;
     newTransaction(sender: string, recipient: string, amount: number, data: {
         type: ETransactionType;
         payload: any;
     }, cypher?: Cypher): ITransaction;
     lastBlock(blockchain?: IBlock[]): IBlock;
     addBlock(block: IBlock): void;
-    validBlock(block: IBlock): boolean;
     validTransaction(transaction: ITransaction): boolean;
     addTransaction(tran: ITransaction): void;
     proofOfWork(): number;

@@ -1,4 +1,4 @@
-import BlockChain, { ITransaction, ITransactionData } from "./blockchain";
+import BlockChain, { ITransaction, ITransactionData, IBlock } from "./blockchain";
 import Multisig from "./multisig";
 import Responder, { RPC, IcallbackResponder } from "./responder";
 import Contract from "../contract/contract";
@@ -12,7 +12,7 @@ export default class BlockChainApp extends BlockChain {
         phrase?: string;
         callback?: IcallbackBlockchain;
     });
-    mine(): Promise<{}>;
+    mine(): Promise<IBlock>;
     makeTransaction(recipient: string, amount: number, data: ITransactionData): ITransaction | undefined;
     transactionRPC(tran: ITransaction): RPC;
 }
