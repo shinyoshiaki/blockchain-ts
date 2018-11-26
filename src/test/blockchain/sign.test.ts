@@ -6,7 +6,7 @@ const cypher = new Cypher();
 
 const sign = cypher.signMessage("test");
 console.log({ sign });
-const result = cypher.verifyMessage({
+const result = verifyMessageWithPublicKey({
   message: sign.message,
   signature: sign.signature,
   publicKey: cypher.pubKey

@@ -3,6 +3,8 @@ import { Decimal } from "decimal.js";
 import Cypher from "./crypto/cypher";
 import type from "./type";
 import { ETransactionType } from "./interface";
+import { excuteEvent } from "../util";
+import { verifyMessageWithPublicKey } from "./crypto/sign";
 
 const diff = /^000/;
 
@@ -33,6 +35,51 @@ export interface ITransaction {
   sign: string;
 }
 
+export function hash(obj: any) {
+  const objString = JSON.stringify(obj, Object.keys(obj).sort());
+  return sha256(objString);
+}
+
+export function jsonStr(obj: any) {
+  return JSON.stringify(obj, Object.keys(obj).sort());
+}
+
+export function validProof(
+  lastProof: number,
+  proof: number,
+  lastHash: string,
+  address: string
+) {
+  const guess = `${lastProof}${proof}${lastHash}${address}`;
+  const guessHash = sha256(guess);
+  //先頭から４文字が０なら成功
+  return diff.test(guessHash);
+}
+
+export function validChain(chain: IBlock[]) {
+  let index = 2;
+  while (index < chain.length) {
+    const previousBlock = chain[index - 1];
+    const block = chain[index];
+
+    //ブロックの持つ前のブロックのハッシュ値と実際の前の
+    //ブロックのハッシュ値を比較
+    if (block.previousHash !== hash(previousBlock)) {
+      console.log("blockchain hash error");
+      return false;
+    }
+    //ナンスの値の検証
+    if (
+      !validProof(previousBlock.proof, block.proof, hash(block), block.owner)
+    ) {
+      console.log("blockchain nonce error");
+      return false;
+    }
+    index++;
+  }
+  return true;
+}
+
 export default class BlockChain {
   chain: IBlock[] = [];
   currentTransactions: Array<any> = [];
@@ -56,15 +103,6 @@ export default class BlockChain {
     this.newBlock(0, "genesis");
   }
 
-  hash(obj: any) {
-    const objString = JSON.stringify(obj, Object.keys(obj).sort());
-    return sha256(objString);
-  }
-
-  jsonStr(obj: any) {
-    return JSON.stringify(obj, Object.keys(obj).sort());
-  }
-
   newBlock(proof: any, previousHash: string) {
     //採掘報酬
     this.newTransaction(type.SYSTEM, this.address, 1, {
@@ -77,13 +115,13 @@ export default class BlockChain {
       timestamp: Date.now(), //タイムスタンプ
       transactions: this.currentTransactions, //トランザクションの塊
       proof: proof, //ナンス
-      previousHash: previousHash || this.hash(this.lastBlock()), //前のブロックのハッシュ値
+      previousHash: previousHash || hash(this.lastBlock()), //前のブロックのハッシュ値
       owner: this.address, //このブロックを作った人
       publicKey: this.cypher.pubKey, //このブロックを作った人の公開鍵
       sign: "" //このブロックを作った人の署名
     };
     //署名を生成
-    block.sign = this.cypher.signMessage(this.hash(block)).signature;
+    block.sign = this.cypher.signMessage(hash(block)).signature;
     //ブロックチェーンに追加
     this.chain.push(block);
 
@@ -110,7 +148,7 @@ export default class BlockChain {
       nonce: this.getNonce(),
       sign: "" //署名
     };
-    tran.sign = cypher.signMessage(this.hash(tran)).signature;
+    tran.sign = cypher.signMessage(hash(tran)).signature;
     //トランザクションを追加
     this.currentTransactions.push(tran);
 
@@ -128,21 +166,14 @@ export default class BlockChain {
       this.chain.push(block);
 
       this.callback.onAddBlock();
-      this.excuteEvent(this.events.onAddBlock);
+      excuteEvent(this.events.onAddBlock);
     }
-  }
-
-  private excuteEvent(ev: any, v?: any) {
-    console.log("excuteEvent", ev);
-    Object.keys(ev).forEach(key => {
-      ev[key](v);
-    });
   }
 
   validBlock(block: IBlock) {
     const lastBlock = this.lastBlock();
     const lastProof = lastBlock.proof;
-    const lastHash = this.hash(lastBlock);
+    const lastHash = hash(lastBlock);
     const owner = block.owner;
     const sign = block.sign;
     const publicKey = block.publicKey;
@@ -150,15 +181,15 @@ export default class BlockChain {
 
     //署名が正しいかどうか
     if (
-      this.cypher.verifyMessage({
-        message: this.hash(block),
+      verifyMessageWithPublicKey({
+        message: hash(block),
         publicKey,
         signature: sign
       })
     ) {
       block.sign = sign;
       //ナンスが正しいかどうか
-      if (this.validProof(lastProof, block.proof, lastHash, owner)) {
+      if (validProof(lastProof, block.proof, lastHash, owner)) {
         return true;
       } else {
         console.log("block nonce error", this.address, this.chain);
@@ -168,45 +199,6 @@ export default class BlockChain {
       console.log("block sign error", this.address);
       return false;
     }
-  }
-
-  validProof(
-    lastProof: number,
-    proof: number,
-    lastHash: string,
-    address: string
-  ) {
-    const guess = `${lastProof}${proof}${lastHash}${address}`;
-    const guessHash = sha256(guess);
-    //先頭から４文字が０なら成功
-    return diff.test(guessHash);
-  }
-
-  validChain(chain: IBlock[]) {
-    let index = 2;
-    while (index < chain.length) {
-      const previousBlock = chain[index - 1];
-      const block = chain[index];
-
-      //ブロックの持つ前のブロックのハッシュ値と実際の前の
-      //ブロックのハッシュ値を比較
-      if (block.previousHash !== this.hash(previousBlock)) {
-        return false;
-      }
-      //ナンスの値の検証
-      if (
-        !this.validProof(
-          previousBlock.proof,
-          block.proof,
-          this.hash(block),
-          block.owner
-        )
-      ) {
-        return false;
-      }
-      index++;
-    }
-    return true;
   }
 
   validTransaction(transaction: ITransaction) {
@@ -230,8 +222,8 @@ export default class BlockChain {
       //署名が正しいかどうか
       //公開鍵で署名を解読しトランザクションのハッシュ値と一致することを確認する。
       if (
-        this.cypher.verifyMessage({
-          message: this.hash(transaction),
+        verifyMessageWithPublicKey({
+          message: hash(transaction),
           publicKey,
           signature: sign
         })
@@ -261,7 +253,7 @@ export default class BlockChain {
       console.log("validTransaction", { tran });
       //トランザクションを追加
       this.currentTransactions.push(tran);
-      this.excuteEvent(this.events.onTransaction);
+      excuteEvent(this.events.onTransaction);
     } else {
       console.log("error Transaction");
     }
@@ -270,11 +262,11 @@ export default class BlockChain {
   proofOfWork() {
     const lastBlock = this.lastBlock();
     const lastProof = lastBlock.proof;
-    const lastHash = this.hash(lastBlock);
+    const lastHash = hash(lastBlock);
 
     let proof = 0;
 
-    while (!this.validProof(lastProof, proof, lastHash, this.address)) {
+    while (!validProof(lastProof, proof, lastHash, this.address)) {
       //ナンスの値を試行錯誤的に探す
       proof++;
     }

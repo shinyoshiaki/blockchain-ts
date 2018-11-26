@@ -24,6 +24,10 @@ export interface ITransaction {
     nonce: number;
     sign: string;
 }
+export declare function hash(obj: any): string;
+export declare function jsonStr(obj: any): string;
+export declare function validProof(lastProof: number, proof: number, lastHash: string, address: string): boolean;
+export declare function validChain(chain: IBlock[]): boolean;
 export default class BlockChain {
     chain: IBlock[];
     currentTransactions: Array<any>;
@@ -43,8 +47,6 @@ export default class BlockChain {
         };
     };
     constructor(phrase?: string);
-    hash(obj: any): string;
-    jsonStr(obj: any): string;
     newBlock(proof: any, previousHash: string): IBlock;
     newTransaction(sender: string, recipient: string, amount: number, data: {
         type: ETransactionType;
@@ -52,10 +54,7 @@ export default class BlockChain {
     }, cypher?: Cypher): ITransaction;
     lastBlock(blockchain?: IBlock[]): IBlock;
     addBlock(block: IBlock): void;
-    private excuteEvent;
     validBlock(block: IBlock): boolean;
-    validProof(lastProof: number, proof: number, lastHash: string, address: string): boolean;
-    validChain(chain: IBlock[]): boolean;
     validTransaction(transaction: ITransaction): boolean;
     addTransaction(tran: ITransaction): void;
     proofOfWork(): number;

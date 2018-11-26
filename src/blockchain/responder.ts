@@ -1,4 +1,4 @@
-import { ITransaction, IBlock } from "./blockchain";
+import { ITransaction, IBlock, validChain, jsonStr } from "./blockchain";
 import BlockChainApp from "./blockchainApp";
 import { IEvents, excuteEvent } from "../util";
 
@@ -62,9 +62,7 @@ export default class Responder {
       console.log("blockchainApp transaction", body);
       if (
         //トランザクションプールに受け取ったトランザクションがあるか簡易的に調べる
-        !this.bc
-          .jsonStr(this.bc.currentTransactions)
-          .includes(this.bc.jsonStr(body))
+        jsonStr(this.bc.currentTransactions).includes(jsonStr(body))
       ) {
         //トランザクションをトランザクションプールに加える
         this.bc.addTransaction(body);
@@ -121,7 +119,7 @@ export default class Responder {
       this.onResolveConflict = (chain: IBlock[]) => {
         console.log("onResolveConflict", this.bc.chain.length, chain.length);
         if (this.bc.chain.length < chain.length) {
-          if (this.bc.validChain(chain)) {
+          if (validChain(chain)) {
             console.log("swap chain");
             this.bc.chain = chain;
           } else {

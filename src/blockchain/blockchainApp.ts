@@ -1,5 +1,5 @@
 require("babel-polyfill");
-import BlockChain, { ITransaction, ITransactionData } from "./blockchain";
+import BlockChain, { ITransaction, ITransactionData, hash } from "./blockchain";
 import Multisig from "./multisig";
 import Responder, { RPC, typeRPC, IcallbackResponder } from "./responder";
 import Contract from "../contract/contract";
@@ -24,7 +24,8 @@ export default class BlockChainApp extends BlockChain {
       //プルーフオブワーク(ナンスの探索)
       const proof = this.proofOfWork();
       //最後のブロックのハッシュ値
-      const previousHash = this.hash(this.lastBlock());
+
+      const previousHash = hash(this.lastBlock());
       //新しいブロック
       const block = this.newBlock(proof, previousHash);
       //完了

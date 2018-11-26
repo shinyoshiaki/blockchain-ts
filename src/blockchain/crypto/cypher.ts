@@ -60,13 +60,5 @@ export default class Cypher {
       message: result.message,
       signature: result.signature
     };
-  }
-
-  verifyMessage({
-    message,
-    publicKey,
-    signature
-  }: SignedMessageWithOnePassphrase): boolean {
-    return verifyMessageWithPublicKey({ message, publicKey, signature });
-  }
+  }  
 }

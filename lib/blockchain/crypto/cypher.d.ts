@@ -1,5 +1,4 @@
 import Mnemonic from "bitcore-mnemonic";
-import { SignedMessageWithOnePassphrase } from "./sign";
 export default class Cypher {
     mnemonic: Mnemonic;
     secKey: string;
@@ -12,5 +11,4 @@ export default class Cypher {
         message: string;
         signature: string;
     };
-    verifyMessage({ message, publicKey, signature }: SignedMessageWithOnePassphrase): boolean;
 }
