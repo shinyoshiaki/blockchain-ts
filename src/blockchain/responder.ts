@@ -92,8 +92,8 @@ export default class Responder {
       }
     };
 
-    this.RPC[typeRPC.RESOLVE_CONFLICT] = (chain: IBlock[]) => {
-      if (this.onResolveConflict) this.onResolveConflict(chain);
+    this.RPC[typeRPC.RESOLVE_CONFLICT] = (body: IOnConflict) => {
+      if (this.onResolveConflict) this.onResolveConflict(body.chain);
     };
   }
 
