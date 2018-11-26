@@ -4,7 +4,7 @@ import { IEvents, excuteEvent } from "../util";
 
 //コールバックは強制、イベントは任意にしようとしている
 export interface IcallbackResponder {
-  listenConfilict: (rpc: RPC) => void;
+  listenConflict: (rpc: RPC) => void;
   answerConflict: (rpc: RPC) => void;
 }
 
@@ -78,7 +78,11 @@ export default class Responder {
       console.log("blockchain app check conflict");
       //自分のチェーンが質問者より長ければ、自分のチェーンを返す
       if (this.bc.chain.length > body.size) {
-        console.log("blockchain app check is conflict");
+        console.log(
+          "blockchain app check is conflict",
+          this.bc.chain.length,
+          body.size
+        );
         const onConflict: IOnConflict = {
           chain: this.bc.chain,
           listenrAddress: body.address
@@ -111,17 +115,20 @@ export default class Responder {
       };
       const rpc: RPC = { type: typeRPC.CONFLICT, body: conflict };
       //他のノードにブロックチェーンの状況を聞く
-      if (this.callback) this.callback.listenConfilict(rpc);
+      if (this.callback) this.callback.listenConflict(rpc);
 
       //他のノードからの回答を調べる
-      this.onResolveConflict = (chain: Array<any>) => {
-        console.log("onResolveConflict");
+      this.onResolveConflict = (chain: IBlock[]) => {
+        console.log("onResolveConflict", this.bc.chain.length, chain.length);
         if (this.bc.chain.length < chain.length) {
           if (this.bc.validChain(chain)) {
+            console.log("swap chain");
             this.bc.chain = chain;
           } else {
             console.log("conflict wrong chain");
           }
+        } else {
+          console.log("my chain is longer");
         }
         clearTimeout(timeout);
         resolve(true);

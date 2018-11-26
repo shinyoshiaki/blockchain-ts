@@ -2,7 +2,7 @@ import { IBlock } from "./blockchain";
 import BlockChainApp from "./blockchainApp";
 import { IEvents } from "../util";
 export interface IcallbackResponder {
-    listenConfilict: (rpc: RPC) => void;
+    listenConflict: (rpc: RPC) => void;
     answerConflict: (rpc: RPC) => void;
 }
 export interface RPC {
