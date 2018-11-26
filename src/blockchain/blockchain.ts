@@ -65,14 +65,14 @@ export function validChain(chain: IBlock[]) {
     //ブロックの持つ前のブロックのハッシュ値と実際の前の
     //ブロックのハッシュ値を比較
     if (block.previousHash !== hash(previousBlock)) {
-      console.log("blockchain hash error");
+      console.log("blockchain hash error", { block });
       return false;
     }
     //ナンスの値の検証
     if (
       !validProof(previousBlock.proof, block.proof, hash(block), block.owner)
     ) {
-      console.log("blockchain nonce error");
+      console.log("blockchain nonce error", { block });
       return false;
     }
     index++;
