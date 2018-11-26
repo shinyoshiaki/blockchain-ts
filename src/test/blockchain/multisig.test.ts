@@ -17,12 +17,12 @@ async function main() {
   const cypher = new Cypher();
   friends.push(aes256.encrypt("format", cypher.pubKey));
   //承認者１
-  const bc2 = new BlockChain(cypher.phrase);
+  const bc2 = new BlockChain({ phrase: cypher.phrase });
 
   const cypher2 = new Cypher();
   friends.push(aes256.encrypt("format", cypher2.pubKey));
   //承認者２
-  const bc3 = new BlockChain(cypher2.phrase);
+  const bc3 = new BlockChain({ phrase: cypher2.phrase });
 
   //作成役がマイニングしてトークンを稼ぐ
   await bc1.mine();
@@ -31,7 +31,7 @@ async function main() {
   bc2.chain = bc1.chain;
   bc3.chain = bc1.chain;
 
-  bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {    
+  bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {
     test("multisig", test => {
       test.pass();
     });

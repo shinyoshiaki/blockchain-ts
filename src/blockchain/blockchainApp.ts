@@ -1,18 +1,21 @@
 require("babel-polyfill");
 import BlockChain, { ITransaction, ITransactionData } from "./blockchain";
 import Multisig from "./multisig";
-import Responder, { RPC, typeRPC } from "./responder";
+import Responder, { RPC, typeRPC, IcallbackResponder } from "./responder";
 import Contract from "../contract/contract";
+
+interface IcallbackBlockchain extends IcallbackResponder {}
 
 export default class BlockChainApp extends BlockChain {
   multisig: Multisig;
   contract: Contract;
   responder: Responder;
-  constructor(phrase?: string) {
-    super(phrase);
+  constructor(opt?: { phrase?: string; callback?: IcallbackBlockchain }) {
+    if (!opt) opt = {};
+    super(opt.phrase);
     this.multisig = new Multisig(this);
     this.contract = new Contract(this);
-    this.responder = new Responder(this);
+    this.responder = new Responder(this, opt.callback);
   }
 
   mine() {
@@ -23,20 +26,20 @@ export default class BlockChainApp extends BlockChain {
       //最後のブロックのハッシュ値
       const previousHash = this.hash(this.lastBlock());
       //新しいブロック
-      const block = this.newBlock(proof, previousHash);            
+      const block = this.newBlock(proof, previousHash);
       //完了
       resolve(block);
     });
   }
 
-  makeTransaction(recipient: string, amount: number, data: ITransactionData) {  
+  makeTransaction(recipient: string, amount: number, data: ITransactionData) {
     //残高が足りているか
     if (amount > this.nowAmount()) {
       console.log("input error");
       return;
     }
     //トランザクションの生成
-    const tran = this.newTransaction(this.address, recipient, amount, data);    
+    const tran = this.newTransaction(this.address, recipient, amount, data);
     return tran;
   }
 

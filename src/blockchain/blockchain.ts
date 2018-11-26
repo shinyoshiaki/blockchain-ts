@@ -6,6 +6,17 @@ import { ETransactionType } from "./interface";
 
 const diff = /^000/;
 
+export interface IBlock {
+  index: number;
+  timestamp: any;
+  transactions: ITransaction[];
+  proof: number;
+  previousHash: string;
+  owner: string;
+  publicKey: string;
+  sign: string;
+}
+
 export interface ITransactionData {
   type: ETransactionType;
   payload: any;
@@ -23,7 +34,7 @@ export interface ITransaction {
 }
 
 export default class BlockChain {
-  chain: Array<any> = [];
+  chain: IBlock[] = [];
   currentTransactions: Array<any> = [];
   cypher: Cypher;
   address: string;
@@ -61,7 +72,7 @@ export default class BlockChain {
       payload: "reward"
     });
 
-    const block = {
+    const block: IBlock = {
       index: this.chain.length + 1, //ブロックの番号
       timestamp: Date.now(), //タイムスタンプ
       transactions: this.currentTransactions, //トランザクションの塊
@@ -106,11 +117,11 @@ export default class BlockChain {
     return tran;
   }
 
-  lastBlock(blockchain = this.chain) {
+  lastBlock(blockchain = this.chain): IBlock {
     return blockchain[blockchain.length - 1];
   }
 
-  addBlock(block: any) {
+  addBlock(block: IBlock) {
     if (this.validBlock(block)) {
       console.log("validBlock");
       this.currentTransactions = [];
@@ -128,7 +139,7 @@ export default class BlockChain {
     });
   }
 
-  validBlock(block: any) {
+  validBlock(block: IBlock) {
     const lastBlock = this.lastBlock();
     const lastProof = lastBlock.proof;
     const lastHash = this.hash(lastBlock);
@@ -160,7 +171,7 @@ export default class BlockChain {
   }
 
   validProof(
-    lastProof: string,
+    lastProof: number,
     proof: number,
     lastHash: string,
     address: string
@@ -171,7 +182,7 @@ export default class BlockChain {
     return diff.test(guessHash);
   }
 
-  validChain(chain: Array<any>) {
+  validChain(chain: IBlock[]) {
     let index = 2;
     while (index < chain.length) {
       const previousBlock = chain[index - 1];

@@ -1,12 +1,21 @@
+import { IBlock } from "./blockchain";
 import BlockChainApp from "./blockchainApp";
 import { IEvents } from "../util";
-interface callback {
-    checkConflict: (v?: any) => void;
-    onConflict: (chain: any, nodeId: any) => void;
+export interface IcallbackResponder {
+    listenConfilict: (rpc: RPC) => void;
+    answerConflict: (rpc: RPC) => void;
 }
 export interface RPC {
     type: typeRPC;
     body: any;
+}
+export interface IConflict {
+    size: number;
+    address: string;
+}
+export interface IOnConflict {
+    chain: IBlock[];
+    listenrAddress: string;
 }
 export declare enum typeRPC {
     NEWBLOCK = "NEWBLOCK",
@@ -15,16 +24,15 @@ export declare enum typeRPC {
     RESOLVE_CONFLICT = "RESOLVE_CONFLICT"
 }
 export default class Responder {
-    callback: callback;
-    onResolveConflict?: (chain: Array<any>) => void;
+    callback: IcallbackResponder | undefined;
+    private onResolveConflict?;
     private onTransaction;
     events: {
-        onTransaction: IEvents;
+        transaction: IEvents;
     };
     bc: BlockChainApp;
     RPC: any;
-    constructor(_bc: BlockChainApp);
+    constructor(_bc: BlockChainApp, callback?: IcallbackResponder);
     runRPC(rpc: RPC): void;
     private checkConflicts;
 }
-export {};

@@ -1,5 +1,15 @@
 import Cypher from "./crypto/cypher";
 import { ETransactionType } from "./interface";
+export interface IBlock {
+    index: number;
+    timestamp: any;
+    transactions: ITransaction[];
+    proof: number;
+    previousHash: string;
+    owner: string;
+    publicKey: string;
+    sign: string;
+}
 export interface ITransactionData {
     type: ETransactionType;
     payload: any;
@@ -15,7 +25,7 @@ export interface ITransaction {
     sign: string;
 }
 export default class BlockChain {
-    chain: Array<any>;
+    chain: IBlock[];
     currentTransactions: Array<any>;
     cypher: Cypher;
     address: string;
@@ -35,26 +45,17 @@ export default class BlockChain {
     constructor(phrase?: string);
     hash(obj: any): string;
     jsonStr(obj: any): string;
-    newBlock(proof: any, previousHash: string): {
-        index: number;
-        timestamp: number;
-        transactions: any[];
-        proof: any;
-        previousHash: string;
-        owner: string;
-        publicKey: string;
-        sign: string;
-    };
+    newBlock(proof: any, previousHash: string): IBlock;
     newTransaction(sender: string, recipient: string, amount: number, data: {
         type: ETransactionType;
         payload: any;
     }, cypher?: Cypher): ITransaction;
-    lastBlock(blockchain?: any[]): any;
-    addBlock(block: any): void;
+    lastBlock(blockchain?: IBlock[]): IBlock;
+    addBlock(block: IBlock): void;
     private excuteEvent;
-    validBlock(block: any): boolean;
-    validProof(lastProof: string, proof: number, lastHash: string, address: string): boolean;
-    validChain(chain: Array<any>): boolean;
+    validBlock(block: IBlock): boolean;
+    validProof(lastProof: number, proof: number, lastHash: string, address: string): boolean;
+    validChain(chain: IBlock[]): boolean;
     validTransaction(transaction: ITransaction): boolean;
     addTransaction(tran: ITransaction): void;
     proofOfWork(): number;
