@@ -1,6 +1,7 @@
 import BlockChainApp from "../../blockchain/blockchainApp";
 import { typeRPC } from "../../blockchain/responder";
 import test from "ava";
+import { ITransaction } from "../../blockchain/blockchain";
 
 const code = `
 const initialState = { v0: 0 };
@@ -25,19 +26,23 @@ main();
 
 async function main() {
   const b = new BlockChainApp();
+  await b.mine();
+
   const bs: BlockChainApp[] = [];
   for (let i = 0; i < 2; i++) {
     bs.push(new BlockChainApp());
-  }
-  await b.mine();
+  }  
   bs.forEach(bc => {
     bc.chain = b.chain;
   });
 
-  let tran: any = b.contract.makeContract(0, code);
+  let tran = b.contract.makeContract(0, code);
+  if (!tran) return;
   const address = tran.data.payload.address;
+
   bs.forEach(bc => {
     bc.responder.runRPC({ type: typeRPC.TRANSACRION, body: tran });
+    console.log("contracts", bc.contract.contracts);
   });
 
   tran = b.contract.makeMessageCall(address, 0, {
@@ -49,7 +54,7 @@ async function main() {
   });
 
   test("blockchain-contract", test => {
-    bs.forEach(bc => {
+    bs.forEach(bc => {      
       test.is(bc.contract.contracts[address].state.v0, 4);
     });
   });

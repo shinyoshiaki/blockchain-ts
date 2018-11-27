@@ -59,12 +59,9 @@ export default class Responder {
 
     //トランザクションに対する処理
     this.RPC[typeRPC.TRANSACRION] = (body: ITransaction) => {
-      console.log("blockchainApp transaction", body);
-      if (
-        //トランザクションプールに受け取ったトランザクションがあるか簡易的に調べる
-        jsonStr(this.bc.currentTransactions).includes(jsonStr(body))
-      ) {
+      if (!jsonStr(this.bc.currentTransactions).includes(jsonStr(body))) {
         //トランザクションをトランザクションプールに加える
+        console.log("on transaction");
         this.bc.addTransaction(body);
         this.bc.multisig.responder(body);
         this.bc.contract.responder(body);
@@ -73,14 +70,8 @@ export default class Responder {
     };
 
     this.RPC[typeRPC.CONFLICT] = (body: IConflict) => {
-      console.log("blockchain app check conflict");
       //自分のチェーンが質問者より長ければ、自分のチェーンを返す
       if (this.bc.chain.length > body.size) {
-        console.log(
-          "blockchain app check is conflict",
-          this.bc.chain.length,
-          body.size
-        );
         const onConflict: IOnConflict = {
           chain: this.bc.chain,
           listenrAddress: body.address
@@ -101,7 +92,6 @@ export default class Responder {
 
   private checkConflicts() {
     return new Promise((resolve, reject) => {
-      console.log("checkConflicts");
       //タイムアウト
       const timeout = setTimeout(() => {
         reject("checkconflicts timeout");

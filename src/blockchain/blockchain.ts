@@ -166,7 +166,6 @@ export default class BlockChain {
 
     //トランザクションプールをリセット
     this.currentTransactions = [];
-    console.log("new block done", this.chain);
     return block;
   }
 
@@ -256,12 +255,11 @@ export default class BlockChain {
 
   addTransaction(tran: ITransaction) {
     if (this.validTransaction(tran)) {
-      console.log("validTransaction", { tran });
       //トランザクションを追加
       this.currentTransactions.push(tran);
       excuteEvent(this.events.onTransaction);
     } else {
-      console.log("error Transaction");
+      console.log("error Transaction", { tran });
     }
   }
 

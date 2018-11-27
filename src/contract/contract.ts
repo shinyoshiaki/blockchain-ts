@@ -22,10 +22,10 @@ export default class Contract {
   }
 
   private deploy(tran: ITransaction) {
+    console.log("deploy", { tran });
     const sign = JSON.stringify(
       this.bc.cypher.signMessage(Math.random().toString())
     );
-
     const payload: Deploy = tran.data.payload;
     const contract = new ContractVM(
       tran.recipient,
@@ -43,6 +43,7 @@ export default class Contract {
   }
 
   responder(tran: ITransaction) {
+    console.log("contracts res", { tran });
     if (tran.data.type === ETransactionType.deploy) {
       this.deploy(tran);
     } else if (tran.data.type === ETransactionType.messagecall) {
@@ -50,7 +51,7 @@ export default class Contract {
     }
   }
 
-  makeContract(amount: number, code: string) {
+  makeContract(amount: number, code: string): ITransaction | undefined {
     const address = sha256(this.bc.address + this.bc.getNonce());
     const payload: Deploy = { code, address };
     const data: ITransactionData = { type: ETransactionType.deploy, payload };
