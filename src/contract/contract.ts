@@ -29,7 +29,7 @@ export default class Contract {
     const payload: Deploy = tran.data.payload;
     const contract = new ContractVM(
       tran.recipient,
-      payload.code,
+      JSON.parse(payload.code),
       this.bc.cypher.pubKey,
       sign
     );

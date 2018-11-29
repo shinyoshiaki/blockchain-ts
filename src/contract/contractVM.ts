@@ -1,14 +1,19 @@
 import { tokenize } from "esprima";
 import { verifyMessageWithPublicKey } from "../blockchain/crypto/sign";
 
+export interface Icontract {
+  state: {};
+  reducers: { [key: string]: string };
+}
+
 const word = [
   "reducer",
   "initialState",
-  "prevState",
+  "prev",
   "action",
   "type",
   "data",
-  "state"
+  "$state"
 ];
 const whitelist = [
   "console",
@@ -16,14 +21,74 @@ const whitelist = [
   "JSON",
   "parse",
   "parseInt",
+  "parseFloat",
   "isOwner",
   "pubkey"
 ];
-let name: string[] = [];
+const name: string[] = [];
 for (let i = 0; i < 1000; i++) {
-  name.push("v" + i);
-  name.push("a" + i);
-  name.push("f" + i);
+  name.push("Identifier" + i);
+}
+
+function translate(contract: Icontract) {
+  const template = `
+const initialState = @state;
+
+function reducer(prev = initialState, action = { type: "", data: "{}" }) {
+  const data = action.data;
+  switch (action.type) {
+    @reducer
+    default:
+      $state = prev;
+  }  
+  $state = prev;  
+}
+`;
+
+  let code = template;
+  code = code.replace(
+    new RegExp("@state", "g"),
+    JSON.stringify(contract.state)
+  );
+  let reducer = "";
+
+  Object.keys(contract.reducers).forEach(key => {
+    const func = contract.reducers[key];
+    reducer += `
+      case "${key}":
+      {
+          ${func}          
+      }
+      break;
+      `;
+  });
+  code = code.replace(new RegExp("@reducer", "g"), reducer);
+
+  const token = tokenize(code);
+  const identifiers = token
+    .map(item => {
+      if (
+        item.type === "Identifier" &&
+        !word.includes(item.value) &&
+        !whitelist.includes(item.value)
+      )
+        return item.value;
+    })
+    .filter(v => v)
+    .filter(function(x, i, self) {
+      return self.indexOf(x) === i;
+    });
+
+  console.log({ identifiers });
+
+  const hash: { [key: string]: string } = {};
+  identifiers.forEach((word, i) => {
+    if (word) {
+      hash[word] = "Identifier" + i;
+      code = code.replace(new RegExp(word, "g"), "Identifier" + i);
+    }
+  });
+  return { code, hash };
 }
 
 function checkcode(code: string): boolean {
@@ -40,10 +105,12 @@ function checkcode(code: string): boolean {
         return item.value;
     })
     .filter(v => v);
-  if (illigals.length > 0) {
-    console.log({ illigals });
-    return false;
-  }
+
+  illigals.forEach((word, i) => {
+    if (word) {
+      code = code.replace(new RegExp(word, "g"), "Identifier" + i);
+    }
+  });
 
   const identifiers = token
     .map(item => {
@@ -64,11 +131,19 @@ export default class ContractVM {
   address: string;
   code?: any;
   state: any = {};
-  constructor(address: string, code: string, _pubkey: string, sign: string) {
+  idHash: { [key: string]: string };
+  constructor(
+    address: string,
+    contract: Icontract,
+    _pubkey: string,
+    sign: string
+  ) {
     this.address = address;
-    this.code = code;
-    if (checkcode(code)) {
-      let state = {};
+    const result = translate(contract);
+    this.code = result.code;
+    this.idHash = result.hash;
+    if (checkcode(this.code)) {
+      let $state = {};
       function isOwner() {
         const json: { message: string; signature: string } = JSON.parse(sign);
         return verifyMessageWithPublicKey({
@@ -78,24 +153,32 @@ export default class ContractVM {
         });
       }
       const pubkey = _pubkey;
-      console.log("isowner", isOwner());
-      eval(code + `reducer()`);
-      this.state = state;
+      eval(this.code + `reducer()`);
+      this.state = $state;
     }
   }
 
   messageCall(type: string, data = {}) {
-    if (this.code) {
-      let state = this.state;
-      const func = `reducer(state,{type:"${type}",data:${JSON.stringify(
-        data
-      )}})`;
-      const code = this.code + func;
-      if (checkcode(code)) {
-        eval(code);
-        console.log("msgcall", { state });
-        this.state = state;
-      }
+    let str = JSON.stringify(data);
+    Object.keys(this.idHash).forEach(key => {
+      str = str.replace(new RegExp(key, "g"), this.idHash[key]);
+    });
+    data = JSON.parse(str);
+
+    let $state = this.state;
+    const func = `reducer($state,{type:"${type}",data:${JSON.stringify(
+      data
+    )}})`;
+    const code = this.code + func;
+    if (checkcode(code)) {
+      eval(code);
+      console.log("msgcall", type, { data }, { $state });
+      this.state = $state;
     }
+  }
+
+  getState(key: string) {
+    const id = this.idHash[key];
+    return this.state[id];
   }
 }

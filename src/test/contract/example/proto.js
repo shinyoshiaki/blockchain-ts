@@ -1,4 +1,4 @@
-const initialState = { v0: 0 };
+const initialState = { num: 0 };
 
 function reducer(prevState = initialState, action = { type: "", data: "{}" }) {
   console.log({ action });
@@ -6,11 +6,11 @@ function reducer(prevState = initialState, action = { type: "", data: "{}" }) {
   const data = action.data;
   switch (action.type) {
     case "increment":
-      prevState.v0++;
+      prevState.num++;
       state = prevState;
       break;
     case "add":
-      prevState.v0 += parseInt(data.v1, 10);
+      prevState.num += parseInt(data.add, 10);
       state = prevState;
       break;
     default:
@@ -20,5 +20,6 @@ function reducer(prevState = initialState, action = { type: "", data: "{}" }) {
 }
 
 let state = initialState;
-reducer(state, { type: "add", data: JSON.stringify({ v1: "4" }) });
+
+reducer(state, { type: "add", data: JSON.stringify({ add: "4" }) });
 reducer(state, { type: "increment", data: JSON.stringify({}) });
