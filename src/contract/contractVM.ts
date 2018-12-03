@@ -118,8 +118,10 @@ function checkcode(code: string): boolean {
     })
     .filter(v => v);
 
-  //@ts-ignore
-  if (!identifiers.includes(...word)) {
+  console.log({ identifiers, word });
+
+  //必要単語の検査
+  if (word.map(v => identifiers.includes(v)).includes(false)) {
     console.log("not enough");
     return false;
   }

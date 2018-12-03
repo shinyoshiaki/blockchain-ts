@@ -15,6 +15,7 @@ export default class BlockChainApp extends BlockChain {
   multisig: Multisig;
   contract: Contract;
   responder: Responder;
+
   constructor(opt?: { phrase?: string; callback?: IcallbackBlockchain }) {
     if (!opt) opt = {};
     super(opt.phrase);
