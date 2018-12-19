@@ -24,8 +24,8 @@ export interface ITransaction {
     nonce: number;
     sign: string;
 }
-export declare function hash(obj: any): string;
-export declare function jsonStr(obj: any): string;
+export declare function hash(obj: object): string;
+export declare function jsonStr(obj: object): string;
 export declare function validProof(lastProof: number, proof: number, lastHash: string, address: string): boolean;
 export declare function validChain(chain: IBlock[]): boolean;
 export declare function validBlock(lastBlock: IBlock, block: IBlock): boolean;

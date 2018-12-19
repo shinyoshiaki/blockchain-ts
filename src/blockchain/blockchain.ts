@@ -35,12 +35,12 @@ export interface ITransaction {
   sign: string;
 }
 
-export function hash(obj: any) {
+export function hash(obj: object) {
   const objString = JSON.stringify(obj, Object.keys(obj).sort());
   return sha256(objString);
 }
 
-export function jsonStr(obj: any) {
+export function jsonStr(obj: object) {
   return JSON.stringify(obj, Object.keys(obj).sort());
 }
 
