@@ -1,5 +1,6 @@
 import Cypher from "./crypto/cypher";
 import { ETransactionType } from "./interface";
+import Account from "./account";
 export interface IBlock {
     index: number;
     timestamp: any;
@@ -34,17 +35,22 @@ export default class BlockChain {
     currentTransactions: Array<any>;
     cypher: Cypher;
     address: string;
+    accout: Account;
     callback: {
         onAddBlock: (v?: any) => void;
     };
     private onAddBlock;
     private onTransaction;
+    private onMadeTransaction;
     events: {
         onAddBlock: {
             [key: string]: () => void;
         };
         onTransaction: {
             [key: string]: () => void;
+        };
+        onMadeTransaction: {
+            [key: string]: (tran: ITransaction) => void;
         };
     };
     constructor(phrase?: string);
@@ -59,5 +65,6 @@ export default class BlockChain {
     addTransaction(tran: ITransaction): void;
     proofOfWork(): number;
     nowAmount(address?: string): number;
+    getAllTransactions(): ITransaction[];
     getNonce(address?: string): number;
 }

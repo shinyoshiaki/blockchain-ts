@@ -2,22 +2,29 @@ import { ITransaction } from "./blockchain";
 import { multisigInfo } from "./interface";
 import BlockChainApp from "./blockchainApp";
 import { IEvents } from "../util";
-export declare enum type {
-    MAKE = "multisig-make",
-    TRAN = "multisig-tran",
-    APPROVE = "multisig-approve",
-    MULTISIG = "multisig"
-}
-interface multisigData {
-    myShare: string;
-    shares: string[];
-    threshold: number;
-    pubKey: string;
-    isOwner?: boolean;
+declare namespace multisig {
+    enum type {
+        MAKE = "multisig-make",
+        TRAN = "multisig-tran",
+        APPROVE = "multisig-approve",
+        MULTISIG = "multisig"
+    }
+    interface data {
+        myShare: string;
+        shares: string[];
+        threshold: number;
+        pubKey: string;
+        isOwner?: boolean;
+    }
+    interface transaction {
+        opt: type;
+        shares: any;
+        info: any;
+    }
 }
 export default class Multisig {
     multiSig: {
-        [key: string]: multisigData;
+        [key: string]: multisig.data;
     };
     address: string;
     b: BlockChainApp;

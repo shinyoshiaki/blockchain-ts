@@ -1,5 +1,7 @@
 import test from "ava";
 import ContractVM, { Icontract } from "../../contract/contractVM";
+import Cypher from "../../contract/std/cypher";
+import BlockChainApp from "../../blockchain/blockchainApp";
 
 const contract: Icontract = {
   state: { num: 0 },
@@ -13,7 +15,11 @@ const contract: Icontract = {
   }
 };
 
-const vm = new ContractVM("test", contract, "test", "test");
+const blockchain = new BlockChainApp();
+const account = blockchain.accout;
+const cypher = new Cypher(account);
+const sign = cypher.signMessage(Math.random().toString());
+const vm = new ContractVM(contract, blockchain, sign, "test");
 
 console.log("code", vm.code, vm.idHash);
 
@@ -28,6 +34,6 @@ vm.messageCall("mult", { num: 2 });
 vm.messageCall("div", { num: 4 });
 console.log("vm state", vm.state, vm.getState("num"));
 
-test(test => {
+test("vm", test => {
   test.is(vm.getState("num"), 4.5);
 });

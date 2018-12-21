@@ -1,10 +1,6 @@
 import Mnemonic from "bitcore-mnemonic";
 import { bufferToHex } from "./buffer";
-import {
-  signMessageWithPassphrase,
-  verifyMessageWithPublicKey,
-  SignedMessageWithOnePassphrase
-} from "./sign";
+import { signMessageWithPassphrase } from "./sign";
 import { getPrivateAndPublicKeyBytesFromPassphrase } from "./keys";
 import {
   encryptMessageWithPassphrase,
@@ -55,10 +51,6 @@ export default class Cypher {
   }
 
   signMessage(raw: string) {
-    const result = signMessageWithPassphrase(raw, this.phrase);
-    return {
-      message: result.message,
-      signature: result.signature
-    };
-  }  
+    return signMessageWithPassphrase(raw, this.phrase);
+  }
 }

@@ -1,5 +1,10 @@
 import { tokenize } from "esprima";
-import { verifyMessageWithPublicKey } from "../blockchain/crypto/sign";
+import id from "./std/id";
+import sss from "./std/sss";
+import Cypher from "./std/cypher";
+import { SignedMessageWithOnePassphrase } from "../blockchain/crypto/sign";
+import BlockChainApp from "../blockchain/blockchainApp";
+import ContractBlockchain from "./std/blockchain";
 
 export interface Icontract {
   state: {};
@@ -22,12 +27,18 @@ const whitelist = [
   "parse",
   "parseInt",
   "parseFloat",
+  "length",
+  "map",
   "isOwner",
-  "pubkey"
+  "pubkey",
+  "sssSplit",
+  "sssCombine",
+  "makeTransaction",
+  "encrypt"
 ];
 const name: string[] = [];
 for (let i = 0; i < 1000; i++) {
-  name.push("Identifier" + i);
+  name.push("id" + i);
 }
 
 function translate(contract: Icontract) {
@@ -40,8 +51,8 @@ function reducer(prev = initialState, action = { type: "", data: "{}" }) {
     @reducer
     default:
       $state = prev;
-  }  
-  $state = prev;  
+  }
+  $state = prev;
 }
 `;
 
@@ -57,7 +68,7 @@ function reducer(prev = initialState, action = { type: "", data: "{}" }) {
     reducer += `
       case "${key}":
       {
-          ${func}          
+          ${func}
       }
       break;
       `;
@@ -82,12 +93,13 @@ function reducer(prev = initialState, action = { type: "", data: "{}" }) {
   console.log({ identifiers });
 
   const hash: { [key: string]: string } = {};
-  identifiers.forEach((word, i) => {
-    if (word) {
-      hash[word] = "Identifier" + i;
-      code = code.replace(new RegExp(word, "g"), "Identifier" + i);
+  identifiers.forEach((id, i) => {
+    if (id) {
+      hash[id] = "id" + i;
+      code = code.replace(new RegExp(id, "g"), "id" + i);
     }
   });
+  console.log("code", code, { hash });
   return { code, hash };
 }
 
@@ -106,19 +118,16 @@ function checkcode(code: string): boolean {
     })
     .filter(v => v);
 
-  illigals.forEach((word, i) => {
-    if (word) {
-      code = code.replace(new RegExp(word, "g"), "Identifier" + i);
-    }
-  });
+  if (illigals.length > 0) {
+    console.log("contain illigals");
+    return false;
+  }
 
   const identifiers = token
     .map(item => {
       if (item.type === "Identifier") return item.value;
     })
     .filter(v => v);
-
-  console.log({ identifiers, word });
 
   //必要単語の検査
   if (word.map(v => identifiers.includes(v)).includes(false)) {
@@ -131,32 +140,29 @@ function checkcode(code: string): boolean {
 
 export default class ContractVM {
   address: string;
-  code?: any;
+  code: any;
   state: any = {};
   idHash: { [key: string]: string };
+  sign: SignedMessageWithOnePassphrase;
+  cypher: Cypher;
+  contractBlockchain: ContractBlockchain;
   constructor(
-    address: string,
     contract: Icontract,
-    _pubkey: string,
-    sign: string
+    blockchain: BlockChainApp,
+    sign: SignedMessageWithOnePassphrase,
+    address: string
   ) {
     this.address = address;
     const result = translate(contract);
     this.code = result.code;
     this.idHash = result.hash;
-    if (checkcode(this.code)) {
-      let $state = {};
-      function isOwner() {
-        const json: { message: string; signature: string } = JSON.parse(sign);
-        return verifyMessageWithPublicKey({
-          message: json.message,
-          publicKey: pubkey,
-          signature: json.signature
-        });
-      }
-      const pubkey = _pubkey;
-      eval(this.code + `reducer()`);
-      this.state = $state;
+    this.sign = sign;
+    this.cypher = new Cypher(blockchain.accout);
+    this.contractBlockchain = new ContractBlockchain(blockchain);
+
+    const code = this.code + `reducer()`;
+    if (checkcode(code)) {
+      this.runEval(code, {});
     }
   }
 
@@ -167,16 +173,28 @@ export default class ContractVM {
     });
     data = JSON.parse(str);
 
-    let $state = this.state;
     const func = `reducer($state,{type:"${type}",data:${JSON.stringify(
       data
     )}})`;
     const code = this.code + func;
     if (checkcode(code)) {
-      eval(code);
-      console.log("msgcall", type, { data }, { $state });
-      this.state = $state;
+      this.runEval(code, this.state);
     }
+  }
+
+  runEval(code: string, state: any) {
+    let $state = state;
+    const pubkey = this.sign.publicKey;
+    const isOwner = () => id.isOwner(this.sign);
+    const { sssSplit, sssCombine } = sss;
+    const { encrypt, decrypt, signMessage, verifyMessage } = this.cypher;
+    const { makeTransaction, transfer } = this.contractBlockchain;
+    try {
+      eval(code);
+    } catch (error) {
+      console.log(error);
+    }
+    this.state = $state;
   }
 
   getState(key: string) {

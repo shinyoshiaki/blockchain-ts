@@ -40,10 +40,14 @@ export default class BlockChainApp extends BlockChain {
     });
   }
 
-  makeTransaction(recipient: string, amount: number, data: ITransactionData) {
+  makeTransaction(
+    recipient: string,
+    amount: number,
+    data: ITransactionData
+  ): ITransaction | undefined {
     //残高が足りているか
     if (amount > this.nowAmount()) {
-      console.log("input error");
+      console.log("input error", amount, this.nowAmount());
       return;
     }
     //トランザクションの生成

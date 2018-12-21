@@ -7,8 +7,5 @@ export default class Cypher {
     constructor(phrase?: string);
     encrypt(raw: string, recipientPublicKey: string): string;
     decrypt(encrypted: string): string;
-    signMessage(raw: string): {
-        message: string;
-        signature: string;
-    };
+    signMessage(raw: string): import("./sign").SignedMessageWithOnePassphrase;
 }

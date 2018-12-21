@@ -10,29 +10,31 @@ const Buffer = require("buffer/").Buffer;
 var aes256 = require("aes256");
 const sss = require("shamirs-secret-sharing");
 
-export enum type {
-  MAKE = "multisig-make",
-  TRAN = "multisig-tran",
-  APPROVE = "multisig-approve",
-  MULTISIG = "multisig"
-}
+declare namespace multisig {
+  export enum type {
+    MAKE = "multisig-make",
+    TRAN = "multisig-tran",
+    APPROVE = "multisig-approve",
+    MULTISIG = "multisig"
+  }
 
-interface multisigData {
-  myShare: string;
-  shares: string[];
-  threshold: number;
-  pubKey: string;
-  isOwner?: boolean;
-}
+  export interface data {
+    myShare: string;
+    shares: string[];
+    threshold: number;
+    pubKey: string;
+    isOwner?: boolean;
+  }
 
-interface ITranMultisig {
-  opt: type;
-  shares: any;
-  info: any;
+  export interface transaction {
+    opt: type;
+    shares: any;
+    info: any;
+  }
 }
 
 export default class Multisig {
-  multiSig: { [key: string]: multisigData } = {};
+  multiSig: { [key: string]: multisig.data } = {};
   address: string;
   b: BlockChainApp;
   private onMultisigTran: IEvents = {};
@@ -51,21 +53,21 @@ export default class Multisig {
   responder(tran: ITransaction) {
     const data = tran.data;
     if (data.type === ETransactionType.multisig) {
-      const tranMultisig: ITranMultisig = data.payload;
+      const tranMultisig: multisig.transaction = data.payload;
       switch (tranMultisig.opt) {
-        case type.MAKE:
+        case multisig.type.MAKE:
           {
             //トランザクションからマルチシグの情報を取得
             this.getMultiSigKey(tranMultisig.shares, tranMultisig.info);
           }
           break;
-        case type.TRAN:
+        case multisig.type.TRAN:
           {
             //イベントの準備
             this.onMultiSigTransaction(tranMultisig.info);
           }
           break;
-        case type.APPROVE:
+        case multisig.type.APPROVE:
           {
             this.onApproveMultiSig(tranMultisig.info);
           }
@@ -123,7 +125,7 @@ export default class Multisig {
     //トランザクションを生成
     const tran = this.b.newTransaction(this.b.address, address, amount, {
       type: ETransactionType.multisig,
-      payload: { opt: type.MAKE, shares, info }
+      payload: { opt: multisig.type.MAKE, shares, info }
     });
     return tran;
   }
@@ -179,7 +181,7 @@ export default class Multisig {
     const tran = this.b.newTransaction(this.b.address, multisigAddress, 0, {
       type: ETransactionType.multisig,
       payload: {
-        opt: type.TRAN,
+        opt: multisig.type.TRAN,
         amount,
         info
       }
@@ -199,7 +201,7 @@ export default class Multisig {
   approveMultiSig(info: multisigInfo) {
     if (info.ownerPubKey) {
       //マルチシグの情報があるかを調べる
-      if (Object.keys(this.multiSig).includes(info.multisigAddress)) {      
+      if (Object.keys(this.multiSig).includes(info.multisigAddress)) {
         //シェアキーを取り出す
         const key = this.multiSig[info.multisigAddress].myShare;
 
@@ -214,11 +216,11 @@ export default class Multisig {
           {
             type: ETransactionType.multisig,
             payload: {
-              opt: type.APPROVE,
+              opt: multisig.type.APPROVE,
               info: info
             }
           }
-        );        
+        );
         return tran;
       }
     }
@@ -236,12 +238,12 @@ export default class Multisig {
       const shareKey = this.b.cypher.decrypt(info.sharePubKeyRsa);
 
       //新しいシェアキーなら保存する。
-      if (!shares.includes(shareKey)) {        
+      if (!shares.includes(shareKey)) {
         shares.push(shareKey);
       }
 
       //シェアキーの数がしきい値を超えればトランザクションを承認
-      if (shares.length >= info.threshold) {        
+      if (shares.length >= info.threshold) {
         //トランザクションの承認関数
         this.verifyMultiSig(info, shares);
       }
@@ -251,8 +253,8 @@ export default class Multisig {
   //トランザクションの承認
   private verifyMultiSig(info: multisigInfo, _shares: Array<any>) {
     //シャミアのシェアキーからシークレットを復号化
-    const shares = _shares.map(share => hexToBuffer(share));    
-    const phrase = sss.combine(shares).toString();    
+    const shares = _shares.map(share => hexToBuffer(share));
+    const phrase = sss.combine(shares).toString();
     const cypher = new Cypher(phrase);
     const address = info.multisigAddress;
     //マルチシグアドレスの残高を取得
@@ -265,7 +267,7 @@ export default class Multisig {
         amount,
         { type: ETransactionType.transaction, payload: "verifymultisig" },
         cypher
-      );      
+      );
       excuteEvent(this.onMultisigTranDone);
       return tran;
     }
