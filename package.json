@@ -1,6 +1,6 @@
 {
   "name": "blockchain-ts",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "license": "Apache-2.0",
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -15,25 +15,6 @@
     "lib",
     "src"
   ],
-  "devDependencies": {
-    "@babel/cli": "^7.0.0",
-    "@babel/core": "^7.0.0",
-    "@babel/plugin-proposal-class-properties": "^7.0.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
-    "@babel/preset-env": "^7.0.0",
-    "@babel/preset-typescript": "^7.0.0",
-    "@types/decimal.js": "^7.4.0",
-    "@types/esprima": "^4.0.2",
-    "@types/sha256": "^0.2.0",
-    "@types/jest": "^23.3.13",
-    "@types/node": "^10.11.7",
-    "ava": "^1.0.1Z",
-    "ts-node": "^7.0.1",
-    "typescript": "^3.3.3333",
-    "jest": "^23.6.0",
-    "ts-jest": "^23.10.5",
-    "tslib": "^1.9.3"
-  },
   "dependencies": {
     "@liskhq/lisk-cryptography": "^1.1.2",
     "@types/ed2curve": "^0.2.2",
@@ -53,6 +34,24 @@
     "shamirs-secret-sharing": "^0.1.1",
     "sodium-native": "^2.2.3",
     "varuint-bitcoin": "^1.1.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/plugin-proposal-class-properties": "^7.0.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/preset-typescript": "^7.0.0",
+    "@types/decimal.js": "^7.4.0",
+    "@types/esprima": "^4.0.2",
+    "@types/sha256": "^0.2.0",
+    "@types/jest": "^23.3.13",
+    "@types/node": "^10.11.7",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.3.3333",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.5",
+    "tslib": "^1.9.3"
   },
   "jest": {
     "moduleFileExtensions": [
