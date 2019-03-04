@@ -21,7 +21,7 @@ const cypher = new Cypher(account);
 const sign = cypher.signMessage(Math.random().toString());
 const vm = new ContractVM(contract, blockchain, sign, "test");
 
-console.log("code", vm.code, vm.idHash);
+console.log("code", vm.code);
 
 console.log("vm state", vm.state);
 vm.messageCall("increment");

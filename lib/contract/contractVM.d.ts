@@ -1,7 +1,6 @@
 import Cypher from "./std/cypher";
 import { SignedMessageWithOnePassphrase } from "../blockchain/crypto/sign";
 import BlockChainApp from "../blockchain/blockchainApp";
-import ContractBlockchain from "./std/blockchain";
 export interface Icontract {
     state: {};
     reducers: {
@@ -12,12 +11,10 @@ export default class ContractVM {
     address: string;
     code: any;
     state: any;
-    idHash: {
-        [key: string]: string;
-    };
     sign: SignedMessageWithOnePassphrase;
     cypher: Cypher;
-    contractBlockchain: ContractBlockchain;
+    private contractBlockchain;
+    private idHash;
     constructor(contract: Icontract, blockchain: BlockChainApp, sign: SignedMessageWithOnePassphrase, address: string);
     messageCall(type: string, data?: {}): void;
     runEval(code: string, state: any): void;

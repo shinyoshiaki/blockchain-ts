@@ -6,9 +6,9 @@ function reducer(prev = initialState, action = { type: "", data: "{}" }) {
     case "init":
       {
         if (!isOwner()) return;
+        const { friends } = data;
         console.log("multisig");
-        const tran = makeTransaction("${target}", 1);
-        const friends = data.friends;
+        const tran = makeTransaction(contractAddress, 1);
         const shares = sssSplit(tran, friends.length, 2);
         prev.shares = shares.map((share, i) => {
           encrypt(share, friends[i]);

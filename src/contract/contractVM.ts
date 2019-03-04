@@ -34,12 +34,11 @@ const whitelist = [
   "sssSplit",
   "sssCombine",
   "makeTransaction",
-  "encrypt"
+  "encrypt",
+  "contractAddress"
 ];
-const name: string[] = [];
-for (let i = 0; i < 1000; i++) {
-  name.push("id" + i);
-}
+
+const name = [...Array(1000)].map((_, i) => "id" + i);
 
 function translate(contract: Icontract) {
   const template = `
@@ -142,10 +141,12 @@ export default class ContractVM {
   address: string;
   code: any;
   state: any = {};
-  idHash: { [key: string]: string };
   sign: SignedMessageWithOnePassphrase;
   cypher: Cypher;
-  contractBlockchain: ContractBlockchain;
+
+  private contractBlockchain: ContractBlockchain;
+  private idHash: { [key: string]: string };
+
   constructor(
     contract: Icontract,
     blockchain: BlockChainApp,
@@ -185,6 +186,7 @@ export default class ContractVM {
   runEval(code: string, state: any) {
     let $state = state;
     const pubkey = this.sign.publicKey;
+    const contractAddress = this.address;
     const isOwner = () => id.isOwner(this.sign);
     const { sssSplit, sssCombine } = sss;
     const { encrypt, decrypt, signMessage, verifyMessage } = this.cypher;
