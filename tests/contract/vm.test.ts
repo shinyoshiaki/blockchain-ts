@@ -1,7 +1,6 @@
-import test from "ava";
-import ContractVM, { Icontract } from "../../contract/contractVM";
-import Cypher from "../../contract/std/cypher";
-import BlockChainApp from "../../blockchain/blockchainApp";
+import ContractVM, { Icontract } from "../../src/contract/contractVM";
+import Cypher from "../../src/contract/std/cypher";
+import BlockChainApp from "../../src/blockchain/blockchainApp";
 
 const contract: Icontract = {
   state: { num: 0 },
@@ -34,6 +33,6 @@ vm.messageCall("mult", { num: 2 });
 vm.messageCall("div", { num: 4 });
 console.log("vm state", vm.state, vm.getState("num"));
 
-test("vm", test => {
-  test.is(vm.getState("num"), 4.5);
+test("contract/vm", () => {
+  expect(vm.getState("num")).toBe(4.5);
 });

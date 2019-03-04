@@ -1,6 +1,5 @@
-import test from "ava";
-import Cypher from "../../blockchain/crypto/cypher";
-import { verifyMessageWithPublicKey } from "../../blockchain/crypto/sign";
+import Cypher from "../../src/blockchain/crypto/cypher";
+import { verifyMessageWithPublicKey } from "../../src/blockchain/crypto/sign";
 
 const cypher = new Cypher();
 
@@ -24,7 +23,7 @@ const result1 = verifyMessageWithPublicKey({
 
 console.log({ result1 });
 
-test("sign", test => {
-  test.is(result, true);
-  test.is(result1, false);
+test("blockchain/sign", () => {
+  expect(result).toBe(true);
+  expect(result1).not.toBe(true);
 });

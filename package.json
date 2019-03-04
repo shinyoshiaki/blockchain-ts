@@ -8,7 +8,7 @@
     "build": "npm run build:types && npm run build:js",
     "build:types": "tsc --emitDeclarationOnly",
     "build:js": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
-    "test": "tsc ; ava --verbose"
+    "test": "jest"
   },
   "main": "lib/blockchain/blockchainApp.js",
   "files": [
@@ -25,9 +25,14 @@
     "@types/decimal.js": "^7.4.0",
     "@types/esprima": "^4.0.2",
     "@types/sha256": "^0.2.0",
+    "@types/jest": "^23.3.13",
+    "@types/node": "^10.11.7",
     "ava": "^1.0.1Z",
     "ts-node": "^7.0.1",
-    "typescript": "^3.2.1"
+    "typescript": "^3.3.3333",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.5",
+    "tslib": "^1.9.3"
   },
   "dependencies": {
     "@liskhq/lisk-cryptography": "^1.1.2",
@@ -49,13 +54,22 @@
     "sodium-native": "^2.2.3",
     "varuint-bitcoin": "^1.1.0"
   },
-  "ava": {
-    "compileEnhancements": false,
-    "extensions": [
-      "ts"
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
     ],
-    "require": [
-      "ts-node/register"
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfigFile": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "**/*.test.ts"
     ]
   }
 }

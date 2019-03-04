@@ -1,13 +1,18 @@
-import test from "ava";
-import BlockChain from "../../blockchain/blockchainApp";
-import { multisigInfo } from "../../blockchain/interface";
-import { typeRPC } from "../../blockchain/responder";
-import Cypher from "../../blockchain/crypto/cypher";
+import BlockChain from "../../src/blockchain/blockchainApp";
+import { multisigInfo } from "../../src/blockchain/interface";
+import { typeRPC } from "../../src/blockchain/responder";
+import Cypher from "../../src/blockchain/crypto/cypher";
 const aes256 = require("aes256");
 
 console.log("multisig test");
 //マルチシグトランザクションを作る役(作成役とする)
 const bc1 = new BlockChain();
+
+test("blockchain/multisig", () => {
+  bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {
+    expect("").toBe("");
+  };
+});
 
 //シェアキー共有者
 const friends: any[] = [];
@@ -21,12 +26,6 @@ const cypher2 = new Cypher();
 friends.push(aes256.encrypt("format", cypher2.pubKey));
 //承認者２
 const bc3 = new BlockChain({ phrase: cypher2.phrase });
-
-bc1.multisig.events.onMultisigTranDone["test multisig"] = () => {
-  test("multisig", test => {
-    test.pass();
-  });
-};
 
 //承認者が承認するためのコールバックを用意
 bc2.multisig.events.onMultisigTran["test approve"] = (info: multisigInfo) => {

@@ -1,16 +1,15 @@
-import Account from "../../blockchain/account";
-import Cypher from "./cypher";
-import test from "ava";
+import Account from "../../../src/blockchain/account";
+import Cypher from "../../../src/contract/std/cypher";
 
 const c = [...Array(2)].map(() => new Cypher(new Account()));
 
-test("cypher", test => {
+test("cypher", () => {
   const raw = "test";
   {
     const enc = c[0].encrypt(raw, c[1].accout.pubKey);
     const dec = c[1].decrypt(enc);
-    test.not(raw, enc);
-    test.is(raw, dec);
+    expect(raw).not.toBe(enc);
+    expect(raw).toBe(dec);
   }
   {
     const enc = c[0].signMessage(raw);
@@ -19,6 +18,6 @@ test("cypher", test => {
       c[0].accout.pubKey,
       enc.signature
     );
-    test.is(dec, true);
+    expect(dec).toBe(true);
   }
 });

@@ -1,5 +1,4 @@
-import test from "ava";
-import Cypher from "../../blockchain/crypto/cypher";
+import Cypher from "../../src/blockchain/crypto/cypher";
 
 const cypher = new Cypher();
 const cypher1 = new Cypher();
@@ -10,6 +9,6 @@ console.log({ enc });
 const result = cypher1.decrypt(enc);
 console.log({ result });
 
-test("sign", test => {
-  test.is(result, msg);
+test("blockchain/sign", () => {
+  expect(result).toBe(msg);
 });
