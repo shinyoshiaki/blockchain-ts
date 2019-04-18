@@ -48,7 +48,7 @@
     "@types/jest": "^23.3.13",
     "@types/node": "^10.11.7",
     "ts-node": "^7.0.1",
-    "typescript": "^3.3.3333",
+    "typescript": "^3.4.3",
     "jest": "^23.6.0",
     "ts-jest": "^23.10.5",
     "tslib": "^1.9.3"

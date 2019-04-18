@@ -7,10 +7,10 @@ const contract: Icontract = {
   reducers: {
     increment: "prev.num++;",
     decrement: "prev.num--;",
-    add: "prev.num += parseInt(data.num, 10)",
-    minus: "prev.num -= parseInt(data.num, 10)",
-    mult: "prev.num *= parseInt(data.num, 10)",
-    div: "prev.num /= parseInt(data.num, 10)"
+    add: "prev.num += Number(data.num)",
+    minus: "prev.num -= Number(data.num)",
+    mult: "prev.num *= Number(data.num)",
+    div: "prev.num /= Number(data.num)"
   }
 };
 
@@ -31,8 +31,9 @@ vm.messageCall("add", { num: 10 });
 vm.messageCall("minus", { num: 3 });
 vm.messageCall("mult", { num: 2 });
 vm.messageCall("div", { num: 4 });
+vm.messageCall("add", { num: 0.1 });
 console.log("vm state", vm.state, vm.getState("num"));
 
 test("contract/vm", () => {
-  expect(vm.getState("num")).toBe(4.5);
+  expect(vm.getState("num")).toBe(4.6);
 });

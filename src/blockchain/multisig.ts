@@ -7,7 +7,7 @@ import BlockChainApp from "./blockchainApp";
 import { IEvents, excuteEvent } from "../util";
 import { bufferToHex, hexToBuffer } from "./crypto/buffer";
 const Buffer = require("buffer/").Buffer;
-var aes256 = require("aes256");
+const aes256 = require("aes256");
 const sss = require("shamirs-secret-sharing");
 
 declare namespace multisig {
@@ -36,7 +36,7 @@ declare namespace multisig {
 export default class Multisig {
   multiSig: { [key: string]: multisig.data } = {};
   address: string;
-  b: BlockChainApp;
+
   private onMultisigTran: IEvents = {};
   private onMultisigTranDone: IEvents = {};
   events = {
@@ -44,9 +44,8 @@ export default class Multisig {
     onMultisigTranDone: this.onMultisigTranDone
   };
 
-  constructor(blockchain: BlockChainApp) {
-    this.b = blockchain;
-    this.address = this.b.address;
+  constructor(private b: BlockChainApp) {
+    this.address = b.address;
   }
 
   //通信などにより得られた命令に対する処理

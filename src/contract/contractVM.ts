@@ -25,8 +25,7 @@ const whitelist = [
   "log",
   "JSON",
   "parse",
-  "parseInt",
-  "parseFloat",
+  "Number",
   "length",
   "map",
   "isOwner",
@@ -85,9 +84,7 @@ function reducer(prev = initialState, action = { type: "", data: "{}" }) {
         return item.value;
     })
     .filter(v => v)
-    .filter(function(x, i, self) {
-      return self.indexOf(x) === i;
-    });
+    .filter((x, i, self) => self.indexOf(x) === i);
 
   console.log({ identifiers });
 
