@@ -28,7 +28,7 @@
     "decimal.js": "^10.0.1",
     "ed2curve": "^0.2.1",
     "esprima": "^4.0.1",
-    "keypair": "^1.0.1",
+    "keypair": "^1.0.4",
     "sha1": "^1.1.1",
     "sha256": "^0.2.0",
     "shamirs-secret-sharing": "^0.1.1",
